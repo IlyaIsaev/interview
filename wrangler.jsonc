@@ -5,18 +5,17 @@
   "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
   },
   "d1_databases": [
     {
-      "binding": "DB",
-      "database_name": "interview-db",
-      // Replace after: pnpm wrangler d1 create interview-db
-      "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "drizzle"
-    }
+      "binding": "interview",
+      "database_name": "interview",
+      "database_id": "c840583f-ef3a-4a82-a366-f82c37a7f0d1",
+      "migrations_dir": "drizzle",
+    },
   ],
   "vars": {
-    "BETTER_AUTH_URL": "http://localhost:5173"
-  }
+    "BETTER_AUTH_URL": "https://interview.ecmascript8.workers.dev",
+  },
 }

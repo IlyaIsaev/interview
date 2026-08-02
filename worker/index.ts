@@ -1,15 +1,11 @@
-import { createAuth, type AuthEnv } from '@/auth/server'
+import { Hono } from 'hono'
 
-export default {
-  async fetch(request: Request, env: AuthEnv) {
-    const url = new URL(request.url)
+import { app as authApp, type AuthEnv } from '@/auth/server'
 
-    if (url.pathname.startsWith('/api/auth')) {
-      const auth = createAuth(env)
+const app = new Hono<{ Bindings: AuthEnv }>()
+  .get('/api/health', (c) => c.json({ ok: true as const }, 200))
+  .route('/', authApp)
 
-      return auth.handler(request)
-    }
+export default app
 
-    return new Response('Not found', { status: 404 })
-  },
-}
+export type AppType = typeof app
