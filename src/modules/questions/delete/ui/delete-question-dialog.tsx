@@ -18,6 +18,8 @@ import {
   deleteQuestionData,
   deleteQuestionId,
   loadDeleteQuestion,
+  setDeleteQuestionDialogOpen,
+  submitDeleteQuestion,
 } from '../model/delete-question'
 
 export const DeleteQuestionDialog = reatomComponent(() => {
@@ -27,48 +29,36 @@ export const DeleteQuestionDialog = reatomComponent(() => {
   const isDeleting = deleteQuestion.pending() > 0
   const isBusy = isLoading || isDeleting
 
+  const handleOpenChange = wrap((open: boolean) => {
+    setDeleteQuestionDialogOpen(open, isBusy)
+  })
+
+  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void submitDeleteQuestion()
+  })
+
   return (
-    <Dialog
-      open={id !== null}
-      onOpenChange={wrap((open) => {
-        if (!open && !isBusy) {
-          closeDeleteQuestionDialog()
-        }
-      })}
-    >
+    <Dialog open={id !== null} onOpenChange={handleOpenChange}>
       <DialogContent showCloseButton={!isBusy}>
         {isLoading || !loaded ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="size-5" />
           </div>
         ) : (
-          <form
-            className="contents"
-            onSubmit={wrap(async (event) => {
-              event.preventDefault()
-
-              try {
-                await deleteQuestion()
-              } catch {
-                // Error toast is shown by deleteQuestion.
-              }
-            })}
-          >
+          <form className="contents" onSubmit={handleSubmit}>
             <DialogHeader>
               <DialogTitle>Delete question</DialogTitle>
               <DialogDescription>
                 {`Delete “${loaded.question}”? This cannot be undone.`}
               </DialogDescription>
             </DialogHeader>
-
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 disabled={isDeleting}
-                onClick={wrap(() => {
-                  closeDeleteQuestionDialog()
-                })}
+                onClick={wrap(closeDeleteQuestionDialog)}
               >
                 Cancel
               </Button>

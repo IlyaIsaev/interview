@@ -50,6 +50,7 @@ export const updateQuestionForm = reatomForm(
 
         if (!response.ok) {
           const data = await response.json().catch(() => null)
+
           const message =
             data && 'error' in data && typeof data.error === 'string'
               ? data.error
@@ -61,8 +62,11 @@ export const updateQuestionForm = reatomForm(
         const savedQuestion = question.trim()
 
         await fetchQuestions()
+
         updateQuestionId.set(null)
+
         updateQuestionForm.reset()
+
         toast.success(`“${savedQuestion}” updated`, {
           classNames: {
             title: 'line-clamp-2 min-w-0 break-all whitespace-normal',
@@ -95,6 +99,7 @@ export const loadUpdateQuestion = action(async () => {
 
   if (!response.ok) {
     const data = await response.json().catch(() => null)
+
     const message =
       data && 'error' in data && typeof data.error === 'string'
         ? data.error
@@ -104,6 +109,7 @@ export const loadUpdateQuestion = action(async () => {
   }
 
   const data = await response.json()
+
   const question = data.question as Question
 
   updateQuestionForm.reset({
@@ -116,15 +122,41 @@ export const loadUpdateQuestion = action(async () => {
 
 export const openUpdateQuestionDialog = action((id: string) => {
   updateQuestionForm.reset()
+
   loadUpdateQuestion.error.set(undefined)
+
   updateQuestionId.set(id)
 }, 'openUpdateQuestionDialog')
 
 export const closeUpdateQuestionDialog = action(() => {
   updateQuestionId.set(null)
+
   updateQuestionForm.reset()
+
   loadUpdateQuestion.error.set(undefined)
 }, 'closeUpdateQuestionDialog')
+
+export const setUpdateQuestionDialogOpen = action(
+  (open: boolean, isBusy: boolean) => {
+    if (!open && !isBusy) {
+      closeUpdateQuestionDialog()
+    }
+  },
+  'setUpdateQuestionDialogOpen',
+)
+
+export const submitUpdateQuestionForm = action(async () => {
+  if (!updateQuestionForm.focus().dirty) {
+    return
+  }
+
+  try {
+    await updateQuestionForm.submit()
+  } catch {
+    // Validation stays on the form; API errors also toast.
+  }
+}, 'submitUpdateQuestionForm')
+
 
 effect(async () => {
   if (!updateQuestionId()) {
@@ -138,7 +170,9 @@ effect(async () => {
       error instanceof Error ? error.message : 'Failed to load question'
 
     toast.error(message)
+
     updateQuestionId.set(null)
+
     updateQuestionForm.reset()
   }
 }, 'loadUpdateQuestionOnOpen')

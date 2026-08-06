@@ -11,6 +11,7 @@ import {
 import {
   closeUpdateQuestionDialog,
   loadUpdateQuestion,
+  submitUpdateQuestionForm,
   updateQuestionForm,
 } from '../model/update-question'
 import { TextAreaField } from './text-area-field'
@@ -23,22 +24,15 @@ export const UpdateQuestionForm = reatomComponent(() => {
   const isPending = isSubmitting || isLoading
   const isDirty = updateQuestionForm.focus().dirty
 
+  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void submitUpdateQuestionForm()
+  })
+
   return (
     <form
       className="flex min-h-0 flex-1 flex-col"
-      onSubmit={wrap(async (event) => {
-        event.preventDefault()
-
-        if (!isDirty) {
-          return
-        }
-
-        try {
-          await updateQuestionForm.submit()
-        } catch {
-          // Validation stays on the form; API errors also toast.
-        }
-      })}
+      onSubmit={handleSubmit}
     >
       <FieldSet
         className="flex min-h-0 flex-1 flex-col gap-4"
@@ -51,25 +45,20 @@ export const UpdateQuestionForm = reatomComponent(() => {
             type="text"
             name="question"
           />
-
           <TextAreaField
             field={updateQuestionForm.fields.answer}
             label="Answer"
             name="answer"
             className="min-h-0 flex-1"
           />
-
           <div className="mt-auto flex shrink-0 flex-col gap-2">
             <FieldError>{submitError?.message}</FieldError>
-
             <div className="flex items-center justify-between gap-2">
               <Button
                 type="button"
                 variant="outline"
                 disabled={isPending}
-                onClick={wrap(() => {
-                  closeUpdateQuestionDialog()
-                })}
+                onClick={wrap(closeUpdateQuestionDialog)}
               >
                 Cancel
               </Button>

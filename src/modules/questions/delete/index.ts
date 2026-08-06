@@ -5,6 +5,8 @@ export {
   deleteQuestionId,
   loadDeleteQuestion,
   openDeleteQuestionDialog,
+  setDeleteQuestionDialogOpen,
+  submitDeleteQuestion,
 } from './model/delete-question'
 
 export { DeleteQuestionButton } from './ui/delete-question-button'

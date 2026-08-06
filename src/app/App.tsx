@@ -24,6 +24,10 @@ function PageFallback() {
 }
 
 const App = reatomComponent(() => {
+  const handleSignOut = wrap(() => {
+    void signOut();
+  });
+
   return (
     <TooltipProvider>
       <div className="flex min-h-svh flex-col">
@@ -41,11 +45,7 @@ const App = reatomComponent(() => {
               </>
             ) : null}
             <nav className="mx-auto flex h-full w-full max-w-7xl items-center gap-3 px-4">
-              <button
-                type="button"
-                className="text-sm font-medium"
-                onClick={wrap(() => homeRoute.go())}
-              >
+              <button type="button" className="text-sm font-medium" onClick={wrap(homeRoute.go)}>
                 Interview
               </button>
               <div className="ml-auto flex items-center gap-3">
@@ -53,9 +53,7 @@ const App = reatomComponent(() => {
                   <button
                     type="button"
                     className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={wrap(async () => {
-                      await signOut();
-                    })}
+                    onClick={handleSignOut}
                   >
                     Sign out
                   </button>
@@ -64,14 +62,14 @@ const App = reatomComponent(() => {
                     <button
                       type="button"
                       className="text-sm text-muted-foreground hover:text-foreground"
-                      onClick={wrap(() => signInRoute.go())}
+                      onClick={wrap(signInRoute.go)}
                     >
                       Sign in
                     </button>
                     <button
                       type="button"
                       className="text-sm text-muted-foreground hover:text-foreground"
-                      onClick={wrap(() => signUpRoute.go())}
+                      onClick={wrap(signUpRoute.go)}
                     >
                       Sign up
                     </button>
@@ -81,7 +79,6 @@ const App = reatomComponent(() => {
             </nav>
           </div>
         </header>
-
         <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-10">
           <Suspense fallback={<PageFallback />}>
             {homeRoute.exact() ? <HomePage /> : null}

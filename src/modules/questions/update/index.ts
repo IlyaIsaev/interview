@@ -2,6 +2,8 @@ export {
   closeUpdateQuestionDialog,
   loadUpdateQuestion,
   openUpdateQuestionDialog,
+  setUpdateQuestionDialogOpen,
+  submitUpdateQuestionForm,
   updateQuestionForm,
   updateQuestionId,
 } from './model/update-question'

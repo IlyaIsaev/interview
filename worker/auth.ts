@@ -34,6 +34,7 @@ export type Auth = ReturnType<typeof createAuth>
 export type AuthVariables = {
   auth: Auth
   user: Auth['$Infer']['Session']['user'] | null
+
   session: Auth['$Infer']['Session']['session'] | null
 }
 

@@ -1,6 +1,14 @@
-export { createQuestionForm } from './model/create-question-form'
+export {
+  closeCreateQuestionDialog,
+  createQuestionForm,
+  setCreateQuestionDialogOpen,
+  submitCreateQuestionForm,
+} from './model/create-question-form'
 
-export { createQuestionDialogOpen } from './model/dialog-open'
+export {
+  createQuestionDialogOpen,
+  openCreateQuestionDialog,
+} from './model/dialog-open'
 
 export { CreateQuestionButton } from './ui/create-question-button'
 

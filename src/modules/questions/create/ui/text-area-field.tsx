@@ -6,6 +6,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@/common/components/ui/field'
+
 import { Textarea } from '@/common/components/ui/textarea'
 import { cn } from '@/common/lib/utils'
 
@@ -20,7 +21,9 @@ type TextAreaFieldProps = {
 export const TextAreaField = reatomComponent(
   ({ field, label, name, rows = 6, className }: TextAreaFieldProps) => {
     const bound = bindField(field)
+
     const hasError = Boolean(bound.error)
+
     const fillsHeight = Boolean(className?.includes('flex-1'))
 
     return (
@@ -39,6 +42,7 @@ export const TextAreaField = reatomComponent(
             fillsHeight &&
               'min-h-0 flex-1 resize-none [field-sizing:fixed]',
           )}
+
           aria-invalid={hasError || undefined}
           value={bound.value ?? ''}
           onChange={bound.onChange}

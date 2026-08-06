@@ -11,7 +11,9 @@ export type User = Session['user']
 
 type SessionState = {
   data: Session | null
+
   error: Error | null
+
   isPending: boolean
   isRefetching: boolean
   refetch: () => Promise<void>

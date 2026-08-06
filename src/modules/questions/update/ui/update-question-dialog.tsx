@@ -11,8 +11,8 @@ import {
 import { Spinner } from '@/common/components/ui/spinner'
 
 import {
-  closeUpdateQuestionDialog,
   loadUpdateQuestion,
+  setUpdateQuestionDialogOpen,
   updateQuestionForm,
   updateQuestionId,
 } from '../model/update-question'
@@ -24,15 +24,12 @@ export const UpdateQuestionDialog = reatomComponent(() => {
   const isSubmitting = updateQuestionForm.submit.pending() > 0
   const isBusy = isLoading || isSubmitting
 
+  const handleOpenChange = wrap((open: boolean) => {
+    setUpdateQuestionDialogOpen(open, isBusy)
+  })
+
   return (
-    <Dialog
-      open={id !== null}
-      onOpenChange={wrap((open) => {
-        if (!open && !isBusy) {
-          closeUpdateQuestionDialog()
-        }
-      })}
-    >
+    <Dialog open={id !== null} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={!isBusy}
         className="flex h-[66.666dvh] w-[min(calc(100%-2rem),66.666vw)] max-w-none flex-col gap-4 overflow-hidden sm:max-w-none"

@@ -8,8 +8,11 @@ import {
   FieldSet,
 } from '@/common/components/ui/field'
 
-import { createQuestionForm } from '../model/create-question-form'
-import { createQuestionDialogOpen } from '../model/dialog-open'
+import {
+  closeCreateQuestionDialog,
+  createQuestionForm,
+  submitCreateQuestionForm,
+} from '../model/create-question-form'
 import { TextAreaField } from './text-area-field'
 import { TextField } from './text-field'
 
@@ -17,18 +20,15 @@ export const CreateQuestionForm = reatomComponent(() => {
   const submitError = createQuestionForm.submit.error()
   const isPending = createQuestionForm.submit.pending() > 0
 
+  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void submitCreateQuestionForm()
+  })
+
   return (
     <form
       className="flex min-h-0 flex-1 flex-col"
-      onSubmit={wrap(async (event) => {
-        event.preventDefault()
-
-        try {
-          await createQuestionForm.submit()
-        } catch {
-          // Validation stays on the form; API errors also toast.
-        }
-      })}
+      onSubmit={handleSubmit}
     >
       <FieldSet
         className="flex min-h-0 flex-1 flex-col gap-4"
@@ -41,26 +41,20 @@ export const CreateQuestionForm = reatomComponent(() => {
             type="text"
             name="question"
           />
-
           <TextAreaField
             field={createQuestionForm.fields.answer}
             label="Answer"
             name="answer"
             className="min-h-0 flex-1"
           />
-
           <div className="mt-auto flex shrink-0 flex-col gap-2">
             <FieldError>{submitError?.message}</FieldError>
-
             <div className="flex items-center justify-between gap-2">
               <Button
                 type="button"
                 variant="outline"
                 disabled={isPending}
-                onClick={wrap(() => {
-                  createQuestionDialogOpen.setFalse()
-                  createQuestionForm.reset()
-                })}
+                onClick={wrap(closeCreateQuestionDialog)}
               >
                 Cancel
               </Button>

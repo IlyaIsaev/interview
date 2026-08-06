@@ -14,15 +14,13 @@ const SignInPage = reatomComponent(() => {
           Enter your email and password to continue.
         </p>
       </div>
-
       <SignInForm />
-
       <p className="text-sm text-muted-foreground">
         No account?{' '}
         <button
           type="button"
           className="text-foreground underline-offset-4 hover:underline"
-          onClick={wrap(() => signUpRoute.go())}
+          onClick={wrap(signUpRoute.go)}
         >
           Sign up
         </button>

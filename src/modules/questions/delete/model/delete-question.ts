@@ -25,6 +25,7 @@ export const loadDeleteQuestion = action(async () => {
 
   if (!response.ok) {
     const data = await response.json().catch(() => null)
+
     const message =
       data && 'error' in data && typeof data.error === 'string'
         ? data.error
@@ -34,6 +35,7 @@ export const loadDeleteQuestion = action(async () => {
   }
 
   const data = await response.json()
+
   const question = data.question as Question
 
   deleteQuestionData.set(question)
@@ -43,20 +45,36 @@ export const loadDeleteQuestion = action(async () => {
 
 export const openDeleteQuestionDialog = action((id: string) => {
   deleteQuestion.error.set(undefined)
+
   loadDeleteQuestion.error.set(undefined)
+
   deleteQuestionData.set(null)
+
   deleteQuestionId.set(id)
 }, 'openDeleteQuestionDialog')
 
 export const closeDeleteQuestionDialog = action(() => {
   deleteQuestionId.set(null)
+
   deleteQuestionData.set(null)
+
   deleteQuestion.error.set(undefined)
+
   loadDeleteQuestion.error.set(undefined)
 }, 'closeDeleteQuestionDialog')
 
+export const setDeleteQuestionDialogOpen = action(
+  (open: boolean, isBusy: boolean) => {
+    if (!open && !isBusy) {
+      closeDeleteQuestionDialog()
+    }
+  },
+  'setDeleteQuestionDialogOpen',
+)
+
 export const deleteQuestion = action(async () => {
   const id = deleteQuestionId()
+
   const loaded = deleteQuestionData()
 
   if (!id) {
@@ -90,6 +108,7 @@ export const deleteQuestion = action(async () => {
     await fetchQuestions()
 
     deleteQuestionId.set(null)
+
     deleteQuestionData.set(null)
 
     toast.success(`“${deletedQuestion}” deleted`, {
@@ -107,6 +126,14 @@ export const deleteQuestion = action(async () => {
   }
 }, 'deleteQuestion').extend(withAsync())
 
+export const submitDeleteQuestion = action(async () => {
+  try {
+    await deleteQuestion()
+  } catch {
+    // Error toast is shown by deleteQuestion.
+  }
+}, 'submitDeleteQuestion')
+
 effect(async () => {
   if (!deleteQuestionId()) {
     return
@@ -119,7 +146,9 @@ effect(async () => {
       error instanceof Error ? error.message : 'Failed to load question'
 
     toast.error(message)
+
     deleteQuestionId.set(null)
+
     deleteQuestionData.set(null)
   }
 }, 'loadDeleteQuestionOnOpen')

@@ -17,6 +17,11 @@ type DeleteQuestionButtonProps = {
 
 export const DeleteQuestionButton = reatomComponent(
   ({ questionId }: DeleteQuestionButtonProps) => {
+    const handleOpen = wrap((event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation()
+      openDeleteQuestionDialog(questionId)
+    })
+
     return (
       <Tooltip>
         <TooltipTrigger
@@ -26,10 +31,7 @@ export const DeleteQuestionButton = reatomComponent(
               variant="ghost"
               size="icon-xs"
               aria-label="Delete question"
-              onClick={wrap((event) => {
-                event.stopPropagation()
-                openDeleteQuestionDialog(questionId)
-              })}
+              onClick={handleOpen}
             />
           }
         >

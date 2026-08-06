@@ -6,6 +6,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@/common/components/ui/field'
+
 import { Input } from '@/common/components/ui/input'
 
 type TextFieldProps = {
@@ -19,6 +20,7 @@ type TextFieldProps = {
 export const TextField = reatomComponent(
   ({ field, label, type = 'text', autoComplete, name }: TextFieldProps) => {
     const bound = bindField(field)
+
     const hasError = Boolean(bound.error)
 
     return (

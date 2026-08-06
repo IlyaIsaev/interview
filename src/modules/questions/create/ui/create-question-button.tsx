@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from '@/common/components/ui/tooltip'
 
-import { createQuestionDialogOpen } from '../model/dialog-open'
+import { openCreateQuestionDialog } from '../model/dialog-open'
 
 export const CreateQuestionButton = reatomComponent(() => {
   return (
@@ -21,9 +21,7 @@ export const CreateQuestionButton = reatomComponent(() => {
             variant="ghost"
             size="icon"
             aria-label="Add a new question"
-            onClick={wrap(() => {
-              createQuestionDialogOpen.setTrue()
-            })}
+            onClick={wrap(openCreateQuestionDialog)}
           />
         }
       >

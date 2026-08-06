@@ -47,6 +47,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     }
 
     const db = createDb(c.env.interview)
+
     const rows = await db
       .select()
       .from(questions)
@@ -62,7 +63,9 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     }
 
     const { question, answer } = c.req.valid('json')
+
     const db = createDb(c.env.interview)
+
     const id = crypto.randomUUID()
 
     const [created] = await db
@@ -90,6 +93,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     }
 
     const db = createDb(c.env.interview)
+
     const [row] = await db
       .select()
       .from(questions)
@@ -116,6 +120,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     }
 
     const { question, answer } = c.req.valid('json')
+
     const db = createDb(c.env.interview)
 
     const [updated] = await db
@@ -147,6 +152,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     }
 
     const db = createDb(c.env.interview)
+
     const [deleted] = await db
       .delete(questions)
       .where(eq(questions.id, id.trim()))

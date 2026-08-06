@@ -1,4 +1,4 @@
-import { reatomForm, wrap } from '@reatom/core'
+import { action, reatomForm, wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
 import { Button } from '@/common/components/ui/button'
@@ -54,22 +54,25 @@ export const signUpForm = reatomForm(
   },
 )
 
+export const submitSignUpForm = action(async () => {
+  try {
+    await signUpForm.submit()
+  } catch {
+    // Validation and auth errors stay on the form.
+  }
+}, 'submitSignUpForm')
+
 export const SignUpForm = reatomComponent(() => {
   const submitError = signUpForm.submit.error()
   const isPending = signUpForm.submit.pending() > 0
 
-  return (
-    <form
-      onSubmit={wrap(async (event) => {
-        event.preventDefault()
+  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void submitSignUpForm()
+  })
 
-        try {
-          await signUpForm.submit()
-        } catch {
-          // Validation and auth errors stay on the form.
-        }
-      })}
-    >
+  return (
+    <form onSubmit={handleSubmit}>
       <FieldSet disabled={isPending}>
         <FieldGroup>
           <TextField
@@ -79,7 +82,6 @@ export const SignUpForm = reatomComponent(() => {
             name="name"
             autoComplete="name"
           />
-
           <TextField
             field={signUpForm.fields.email}
             label="Email"
@@ -87,7 +89,6 @@ export const SignUpForm = reatomComponent(() => {
             name="email"
             autoComplete="email"
           />
-
           <TextField
             field={signUpForm.fields.password}
             label="Password"
@@ -95,9 +96,7 @@ export const SignUpForm = reatomComponent(() => {
             name="password"
             autoComplete="new-password"
           />
-
           <FieldError>{submitError?.message}</FieldError>
-
           <Button type="submit" disabled={isPending}>
             {isPending ? 'Creating account…' : 'Sign up'}
           </Button>

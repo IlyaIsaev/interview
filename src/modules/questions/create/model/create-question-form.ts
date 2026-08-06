@@ -1,4 +1,4 @@
-import { reatomForm } from "@reatom/core";
+import { action, reatomForm } from "@reatom/core";
 import { toast } from "sonner";
 
 import { api } from "@/common/api";
@@ -35,6 +35,7 @@ export const createQuestionForm = reatomForm(
 
         if (!response.ok) {
           const data = await response.json().catch(() => null);
+
           const message =
             data && "error" in data && typeof data.error === "string"
               ? data.error
@@ -46,7 +47,9 @@ export const createQuestionForm = reatomForm(
         const savedQuestion = question.trim();
 
         await fetchQuestions();
+
         createQuestionDialogOpen.setFalse();
+
         toast.success(`“${savedQuestion}” created`, {
           classNames: {
             title: "line-clamp-2 min-w-0 break-all whitespace-normal",
@@ -62,3 +65,26 @@ export const createQuestionForm = reatomForm(
     },
   },
 );
+
+export const closeCreateQuestionDialog = action(() => {
+  createQuestionDialogOpen.setFalse();
+
+  createQuestionForm.reset();
+}, "closeCreateQuestionDialog");
+
+export const setCreateQuestionDialogOpen = action((open: boolean) => {
+  createQuestionDialogOpen.set(open);
+
+  if (!open) {
+    createQuestionForm.reset();
+  }
+}, "setCreateQuestionDialogOpen");
+
+export const submitCreateQuestionForm = action(async () => {
+  try {
+    await createQuestionForm.submit();
+  } catch {
+    // Validation stays on the form; API errors also toast.
+  }
+}, "submitCreateQuestionForm");
+

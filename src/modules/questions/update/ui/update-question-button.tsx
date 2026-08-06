@@ -17,6 +17,11 @@ type UpdateQuestionButtonProps = {
 
 export const UpdateQuestionButton = reatomComponent(
   ({ questionId }: UpdateQuestionButtonProps) => {
+    const handleOpen = wrap((event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation()
+      openUpdateQuestionDialog(questionId)
+    })
+
     return (
       <Tooltip>
         <TooltipTrigger
@@ -26,10 +31,7 @@ export const UpdateQuestionButton = reatomComponent(
               variant="ghost"
               size="icon-xs"
               aria-label="Update question"
-              onClick={wrap((event) => {
-                event.stopPropagation()
-                openUpdateQuestionDialog(questionId)
-              })}
+              onClick={handleOpen}
             />
           }
         >
