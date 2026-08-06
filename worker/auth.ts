@@ -31,23 +31,13 @@ export const createAuth = (env: AuthEnv) => {
 
 export type Auth = ReturnType<typeof createAuth>
 
-type Variables = {
+export type AuthVariables = {
   auth: Auth
   user: Auth['$Infer']['Session']['user'] | null
   session: Auth['$Infer']['Session']['session'] | null
 }
 
-export const app = new Hono<{ Bindings: AuthEnv; Variables: Variables }>()
-  .use('/api/*', async (c, next) => {
-    const auth = createAuth(c.env)
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-
-    c.set('auth', auth)
-    c.set('user', session?.user ?? null)
-    c.set('session', session?.session ?? null)
-
-    await next()
-  })
+export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   .on(['POST', 'GET'], '/api/auth/*', (c) => c.get('auth').handler(c.req.raw))
   .get('/api/me', (c) => {
     const user = c.get('user')

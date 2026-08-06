@@ -1,0 +1,130 @@
+import { effect, reatomBoolean, wrap } from "@reatom/core";
+import { reatomComponent } from "@reatom/react";
+import { PanelLeftIcon, PlusIcon } from "lucide-react";
+
+import { Button } from "@/common/components/ui/button";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/common/components/ui/drawer";
+import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/common/components/ui/empty";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/common/components/ui/item";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/common/components/ui/tooltip";
+import { isLoggedIn, isSessionPending } from "@/modules/auth";
+
+import { CreateQuestionButton, createQuestionDialogOpen } from "../create";
+import { DeleteQuestionButton, DeleteQuestionDialog } from "../delete";
+import { fetchQuestions } from "../model/questions";
+import { UpdateQuestionButton, UpdateQuestionDialog } from "../update";
+
+const questionsDrawerOpen = reatomBoolean(false, "questionsDrawerOpen");
+
+effect(async () => {
+  if (!questionsDrawerOpen()) {
+    return;
+  }
+
+  await wrap(fetchQuestions());
+}, "loadQuestionsWhenDrawerOpen");
+
+export const QuestionsDrawer = reatomComponent(() => {
+  const questions = fetchQuestions.data();
+  const isPending = !fetchQuestions.ready();
+  const error = fetchQuestions.error();
+  const loggedIn = isLoggedIn();
+  const sessionPending = isSessionPending();
+
+  if (sessionPending || !loggedIn) {
+    return null;
+  }
+
+  return (
+    <Drawer
+      open={questionsDrawerOpen()}
+      swipeDirection="left"
+      onOpenChange={wrap(questionsDrawerOpen.set)}
+    >
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Show questions"
+              onClick={wrap(() => {
+                questionsDrawerOpen.setTrue();
+              })}
+            />
+          }
+        >
+          <PanelLeftIcon />
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Show questions</TooltipContent>
+      </Tooltip>
+
+      <DrawerContent>
+        <DrawerHeader className="flex flex-row items-start gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <DrawerTitle>Questions</DrawerTitle>
+          </div>
+          <div className="shrink-0">
+            <CreateQuestionButton />
+          </div>
+        </DrawerHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 pt-3">
+          {isPending ? (
+            <div className="flex justify-center py-6">
+              <Spinner className="size-5" />
+            </div>
+          ) : null}
+
+          {!isPending && error ? (
+            <p className="text-sm text-destructive">
+              {error.message || "Failed to load questions"}
+            </p>
+          ) : null}
+
+          {!isPending && !error && questions.length === 0 ? (
+            <Empty className="border border-dashed">
+              <EmptyHeader>
+                <EmptyTitle>No questions yet</EmptyTitle>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button
+                  type="button"
+                  onClick={wrap(() => {
+                    createQuestionDialogOpen.setTrue();
+                  })}
+                >
+                  <PlusIcon data-icon="inline-start" />
+                  Add question
+                </Button>
+              </EmptyContent>
+            </Empty>
+          ) : null}
+
+          {!isPending && !error && questions.length > 0 ? (
+            <ItemGroup className="gap-2">
+              {questions.map((item) => (
+                <Item key={item.id} variant="outline" size="sm" className="flex-nowrap">
+                  <ItemContent className="w-2/3 overflow-hidden">
+                    <ItemTitle className="w-full overflow-hidden">
+                      <span className="truncate">{item.question}</span>
+                    </ItemTitle>
+                  </ItemContent>
+                  <ItemActions className="opacity-0 transition-opacity group-hover/item:opacity-100 group-focus-within/item:opacity-100">
+                    <UpdateQuestionButton questionId={item.id} />
+                    <DeleteQuestionButton questionId={item.id} />
+                  </ItemActions>
+                </Item>
+              ))}
+            </ItemGroup>
+          ) : null}
+        </div>
+
+        <UpdateQuestionDialog />
+        <DeleteQuestionDialog />
+      </DrawerContent>
+    </Drawer>
+  );
+}, "QuestionsDrawer");
