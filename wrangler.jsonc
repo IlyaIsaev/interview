@@ -16,6 +16,6 @@
     },
   ],
   "vars": {
-    "BETTER_AUTH_URL": "https://interview.ecmascript8.workers.dev",
+    "BETTER_AUTH_URL": "https://interview.iaisaev.workers.dev",
   },
 }
