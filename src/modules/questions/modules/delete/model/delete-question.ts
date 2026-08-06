@@ -5,6 +5,7 @@ import { api } from '@/common/api'
 
 import type { Question } from '../../../model/questions'
 import { fetchQuestions } from '../../../model/questions'
+import { clearReadQuestionIfId } from '../../read'
 
 export const deleteQuestionId = atom<string | null>(null, 'deleteQuestionId')
 
@@ -106,6 +107,8 @@ export const deleteQuestion = action(async () => {
     const deletedQuestion = loaded?.question ?? 'Question'
 
     await fetchQuestions()
+
+    await clearReadQuestionIfId(id)
 
     deleteQuestionId.set(null)
 

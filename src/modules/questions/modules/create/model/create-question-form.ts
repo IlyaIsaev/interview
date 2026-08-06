@@ -3,7 +3,9 @@ import { toast } from "sonner";
 
 import { api } from "@/common/api";
 
+import type { Question } from "../../../model/questions";
 import { fetchQuestions } from "../../../model/questions";
+import { adoptReadQuestionIfEmpty } from "../../read";
 import { createQuestionDialogOpen } from "./dialog-open";
 
 export const createQuestionForm = reatomForm(
@@ -44,9 +46,13 @@ export const createQuestionForm = reatomForm(
           throw new Error(message);
         }
 
-        const savedQuestion = question.trim();
+        const data = await response.json();
+        const created = data.question as Question;
+        const savedQuestion = created.question;
 
         await fetchQuestions();
+
+        adoptReadQuestionIfEmpty(created);
 
         createQuestionDialogOpen.setFalse();
 

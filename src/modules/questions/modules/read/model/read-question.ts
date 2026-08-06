@@ -24,6 +24,17 @@ export const showReadAnswer = action(() => {
   readAnswerVisible.setTrue()
 }, 'showReadAnswer')
 
+/** Show a newly created question on home when nothing is displayed yet. */
+export const adoptReadQuestionIfEmpty = action((question: Question) => {
+  if (readQuestion()) {
+    return
+  }
+
+  readQuestion.set(question)
+
+  readAnswerVisible.setFalse()
+}, 'adoptReadQuestionIfEmpty')
+
 export const fetchRandomQuestion = action(async (excludeId?: string) => {
   const response = excludeId
     ? await api.questions.random.$get({
@@ -131,6 +142,20 @@ export const ensureReadQuestionLoaded = action(async () => {
     readAnswerVisible.setFalse()
   }
 }, 'ensureReadQuestionLoaded')
+
+export const clearReadQuestionIfId = action(async (id: string) => {
+  if (readQuestion()?.id !== id) {
+    return
+  }
+
+  readQuestion.set(null)
+
+  readAnswerVisible.setFalse()
+
+  if (homeRoute.exact() && isLoggedIn()) {
+    await ensureReadQuestionLoaded()
+  }
+}, 'clearReadQuestionIfId')
 
 // Load a random question when the home route is open and the user is logged in.
 effect(async () => {

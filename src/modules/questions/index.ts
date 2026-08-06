@@ -38,6 +38,8 @@ export {
 
 export {
   ReadQuestion,
+  adoptReadQuestionIfEmpty,
+  clearReadQuestionIfId,
   ensureReadQuestionLoaded,
   fetchQuestionById,
   fetchRandomQuestion,

@@ -1,4 +1,6 @@
 export {
+  adoptReadQuestionIfEmpty,
+  clearReadQuestionIfId,
   ensureReadQuestionLoaded,
   fetchQuestionById,
   fetchRandomQuestion,
