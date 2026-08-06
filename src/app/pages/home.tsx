@@ -1,5 +1,7 @@
+import { ReadQuestion } from '@/modules/questions'
+
 function HomePage() {
-  return null
+  return <ReadQuestion />
 }
 
 export default HomePage

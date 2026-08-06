@@ -40,16 +40,16 @@ export const DeleteQuestionDialog = reatomComponent(() => {
 
   return (
     <Dialog open={id !== null} onOpenChange={handleOpenChange}>
-      <DialogContent showCloseButton={!isBusy}>
+      <DialogContent showCloseButton={!isBusy} className="min-w-0 overflow-hidden">
         {isLoading || !loaded ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="size-5" />
           </div>
         ) : (
           <form className="contents" onSubmit={handleSubmit}>
-            <DialogHeader>
+            <DialogHeader className="min-w-0">
               <DialogTitle>Delete question</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="min-w-0 break-all">
                 {`Delete “${loaded.question}”? This cannot be undone.`}
               </DialogDescription>
             </DialogHeader>

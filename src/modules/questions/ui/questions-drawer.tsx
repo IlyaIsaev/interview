@@ -33,10 +33,10 @@ import { isLoggedIn, isSessionPending } from '@/modules/auth'
 import {
   CreateQuestionButton,
   openCreateQuestionDialog,
-} from '../create'
-import { DeleteQuestionButton, DeleteQuestionDialog } from '../delete'
+} from '../modules/create'
+import { DeleteQuestionButton, DeleteQuestionDialog } from '../modules/delete'
+import { UpdateQuestionButton, UpdateQuestionDialog } from '../modules/update'
 import { fetchQuestions } from '../model/questions'
-import { UpdateQuestionButton, UpdateQuestionDialog } from '../update'
 
 const questionsDrawerOpen = reatomBoolean(false, 'questionsDrawerOpen')
 
@@ -95,13 +95,13 @@ export const QuestionsDrawer = reatomComponent(() => {
           </div>
         </DrawerHeader>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 pt-3">
-          {isPending ? (
+          {isPending && questions.length === 0 ? (
             <div className="flex justify-center py-6">
               <Spinner className="size-5" />
             </div>
           ) : null}
 
-          {!isPending && error ? (
+          {!isPending && error && questions.length === 0 ? (
             <p className="text-sm text-destructive">
               {error.message || 'Failed to load questions'}
             </p>
@@ -124,7 +124,7 @@ export const QuestionsDrawer = reatomComponent(() => {
             </Empty>
           ) : null}
 
-          {!isPending && !error && questions.length > 0 ? (
+          {questions.length > 0 ? (
             <ItemGroup className="gap-2">
               {questions.map((item) => (
                 <Item

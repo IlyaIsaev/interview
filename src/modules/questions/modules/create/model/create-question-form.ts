@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { api } from "@/common/api";
 
-import { fetchQuestions } from "../../model/questions";
+import { fetchQuestions } from "../../../model/questions";
 import { createQuestionDialogOpen } from "./dialog-open";
 
 export const createQuestionForm = reatomForm(

@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, ne, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 
@@ -78,6 +78,48 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
       .returning()
 
     return c.json({ question: created }, 201)
+  })
+  .get('/api/questions/random', async (c) => {
+    const user = c.get('user')
+
+    if (!user) {
+      return c.json({ error: 'Unauthorized' as const }, 401)
+    }
+
+    const exclude = c.req.query('exclude')
+    const db = createDb(c.env.interview)
+
+    const selectRandom = async (excludedId?: string) => {
+      const query = db.select().from(questions)
+
+      const filtered =
+        excludedId && isNonEmptyString(excludedId)
+          ? query.where(ne(questions.id, excludedId.trim()))
+          : query
+
+      const [row] = await filtered.orderBy(sql`RANDOM()`).limit(1)
+
+      return row
+    }
+
+    const excludedId =
+      exclude && isNonEmptyString(exclude) ? exclude.trim() : undefined
+
+    const preferred = await selectRandom(excludedId)
+
+    if (preferred) {
+      return c.json({ question: preferred }, 200)
+    }
+
+    if (excludedId) {
+      const fallback = await selectRandom()
+
+      if (fallback) {
+        return c.json({ question: fallback }, 200)
+      }
+    }
+
+    return c.json({ error: 'No questions found' as const }, 404)
   })
   .get('/api/questions/:id', async (c) => {
     const user = c.get('user')
