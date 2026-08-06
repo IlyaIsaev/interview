@@ -2,7 +2,7 @@ import { desc, eq, ne, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 
-import { createDb, questions } from '@/db'
+import { createDb, demoQuestions, questions } from '@/db'
 
 import type { AuthEnv, AuthVariables } from './auth'
 
@@ -13,6 +13,9 @@ type QuestionBody = {
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0
+
+const getQuestionsTable = (user: AuthVariables['user']) =>
+  user ? questions : demoQuestions
 
 const questionBodyValidator = validator('json', (value, c) => {
   if (!value || typeof value !== 'object') {
@@ -41,35 +44,25 @@ const questionBodyValidator = validator('json', (value, c) => {
 export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   .get('/api/questions', async (c) => {
     const user = c.get('user')
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' as const }, 401)
-    }
-
+    const table = getQuestionsTable(user)
     const db = createDb(c.env.interview)
 
     const rows = await db
       .select()
-      .from(questions)
-      .orderBy(desc(questions.createdAt))
+      .from(table)
+      .orderBy(desc(table.createdAt))
 
     return c.json({ questions: rows }, 200)
   })
   .post('/api/questions', questionBodyValidator, async (c) => {
     const user = c.get('user')
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' as const }, 401)
-    }
-
+    const table = getQuestionsTable(user)
     const { question, answer } = c.req.valid('json')
-
     const db = createDb(c.env.interview)
-
     const id = crypto.randomUUID()
 
     const [created] = await db
-      .insert(questions)
+      .insert(table)
       .values({
         id,
         question,
@@ -81,11 +74,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   })
   .get('/api/questions/random', async (c) => {
     const user = c.get('user')
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' as const }, 401)
-    }
-
+    const table = getQuestionsTable(user)
     const exclude = c.req.query('exclude')
     const db = createDb(c.env.interview)
 
@@ -93,8 +82,8 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
       if (excludedId && isNonEmptyString(excludedId)) {
         const [row] = await db
           .select()
-          .from(questions)
-          .where(ne(questions.id, excludedId.trim()))
+          .from(table)
+          .where(ne(table.id, excludedId.trim()))
           .orderBy(sql`RANDOM()`)
           .limit(1)
 
@@ -103,7 +92,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
 
       const [row] = await db
         .select()
-        .from(questions)
+        .from(table)
         .orderBy(sql`RANDOM()`)
         .limit(1)
 
@@ -131,11 +120,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   })
   .get('/api/questions/:id', async (c) => {
     const user = c.get('user')
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' as const }, 401)
-    }
-
+    const table = getQuestionsTable(user)
     const id = c.req.param('id')
 
     if (!isNonEmptyString(id)) {
@@ -146,8 +131,8 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
 
     const [row] = await db
       .select()
-      .from(questions)
-      .where(eq(questions.id, id.trim()))
+      .from(table)
+      .where(eq(table.id, id.trim()))
       .limit(1)
 
     if (!row) {
@@ -158,11 +143,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   })
   .put('/api/questions/:id', questionBodyValidator, async (c) => {
     const user = c.get('user')
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' as const }, 401)
-    }
-
+    const table = getQuestionsTable(user)
     const id = c.req.param('id')
 
     if (!isNonEmptyString(id)) {
@@ -170,16 +151,15 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     }
 
     const { question, answer } = c.req.valid('json')
-
     const db = createDb(c.env.interview)
 
     const [updated] = await db
-      .update(questions)
+      .update(table)
       .set({
         question,
         answer,
       })
-      .where(eq(questions.id, id.trim()))
+      .where(eq(table.id, id.trim()))
       .returning()
 
     if (!updated) {
@@ -190,11 +170,7 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   })
   .delete('/api/questions/:id', async (c) => {
     const user = c.get('user')
-
-    if (!user) {
-      return c.json({ error: 'Unauthorized' as const }, 401)
-    }
-
+    const table = getQuestionsTable(user)
     const id = c.req.param('id')
 
     if (!isNonEmptyString(id)) {
@@ -204,8 +180,8 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     const db = createDb(c.env.interview)
 
     const [deleted] = await db
-      .delete(questions)
-      .where(eq(questions.id, id.trim()))
+      .delete(table)
+      .where(eq(table.id, id.trim()))
       .returning()
 
     if (!deleted) {

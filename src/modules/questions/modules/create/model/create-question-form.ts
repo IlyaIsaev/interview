@@ -5,7 +5,7 @@ import { api } from "@/common/api";
 
 import type { Question } from "../../../model/questions";
 import { fetchQuestions } from "../../../model/questions";
-import { adoptReadQuestionIfEmpty } from "../../read";
+import { showCreatedReadQuestion } from "../../read";
 import { createQuestionDialogOpen } from "./dialog-open";
 
 export const createQuestionForm = reatomForm(
@@ -52,9 +52,9 @@ export const createQuestionForm = reatomForm(
 
         await fetchQuestions();
 
-        adoptReadQuestionIfEmpty(created);
-
         createQuestionDialogOpen.setFalse();
+
+        showCreatedReadQuestion(created);
 
         toast.success(`“${savedQuestion}” created`, {
           classNames: {

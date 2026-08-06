@@ -28,7 +28,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/common/components/ui/tooltip'
-import { isLoggedIn, isSessionPending } from '@/modules/auth'
+import { isSessionPending } from '@/modules/auth'
 
 import {
   CreateQuestionButton,
@@ -61,12 +61,10 @@ effect(async () => {
 
 export const QuestionsDrawer = reatomComponent(() => {
   const questions = fetchQuestions.data()
-  const isPending = !fetchQuestions.ready()
+  const isPending = !fetchQuestions.ready() || isSessionPending()
   const error = fetchQuestions.error()
-  const loggedIn = isLoggedIn()
-  const sessionPending = isSessionPending()
 
-  if (sessionPending || !loggedIn) {
+  if (isSessionPending()) {
     return null
   }
 

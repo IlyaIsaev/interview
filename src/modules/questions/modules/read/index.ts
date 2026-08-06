@@ -8,6 +8,7 @@ export {
   pickReadQuestion,
   readAnswerVisible,
   readQuestion,
+  showCreatedReadQuestion,
   showReadAnswer,
 } from './model/read-question'
 

@@ -10,7 +10,7 @@ import {
 
 import { api } from '@/common/api'
 import { homeRoute } from '@/common/routes'
-import { isLoggedIn } from '@/modules/auth'
+import { isLoggedIn, isSessionPending } from '@/modules/auth'
 
 import type { Question } from '../../../model/questions'
 
@@ -19,6 +19,8 @@ export const readQuestion = atom<Question | null>(null, 'readQuestion')
 export const readAnswerVisible = reatomBoolean(false, 'readAnswerVisible')
 
 const isOpeningReadQuestion = atom(false, 'isOpeningReadQuestion')
+
+const lastReadAuthLoggedIn = atom<boolean | null>(null, 'lastReadAuthLoggedIn')
 
 export const showReadAnswer = action(() => {
   readAnswerVisible.setTrue()
@@ -35,6 +37,21 @@ export const adoptReadQuestionIfEmpty = action((question: Question) => {
   readAnswerVisible.setFalse()
 }, 'adoptReadQuestionIfEmpty')
 
+/** Navigate home and show this question in the read view. */
+export const showCreatedReadQuestion = action((question: Question) => {
+  isOpeningReadQuestion.set(true)
+
+  try {
+    readQuestion.set(question)
+
+    readAnswerVisible.setFalse()
+
+    homeRoute.go()
+  } finally {
+    isOpeningReadQuestion.set(false)
+  }
+}, 'showCreatedReadQuestion')
+
 export const fetchRandomQuestion = action(async (excludeId?: string) => {
   const response = excludeId
     ? await api.questions.random.$get({
@@ -45,7 +62,7 @@ export const fetchRandomQuestion = action(async (excludeId?: string) => {
     : await api.questions.random.$get()
 
   if (!response.ok) {
-    if (response.status === 401 || response.status === 404) {
+    if (response.status === 404) {
       readQuestion.set(null)
 
       readAnswerVisible.setFalse()
@@ -74,7 +91,7 @@ export const fetchQuestionById = action(async (id: string) => {
   })
 
   if (!response.ok) {
-    if (response.status === 401 || response.status === 404) {
+    if (response.status === 404) {
       readQuestion.set(null)
 
       readAnswerVisible.setFalse()
@@ -114,11 +131,7 @@ export const openReadQuestion = action(async (id: string) => {
 }, 'openReadQuestion')
 
 export const ensureReadQuestionLoaded = action(async () => {
-  if (!isLoggedIn()) {
-    readQuestion.set(null)
-
-    readAnswerVisible.setFalse()
-
+  if (isSessionPending()) {
     return
   }
 
@@ -152,20 +165,27 @@ export const clearReadQuestionIfId = action(async (id: string) => {
 
   readAnswerVisible.setFalse()
 
-  if (homeRoute.exact() && isLoggedIn()) {
+  if (homeRoute.exact()) {
     await ensureReadQuestionLoaded()
   }
 }, 'clearReadQuestionIfId')
 
-// Load a random question when the home route is open and the user is logged in.
+// Load a random question when the home route is open (demo or personal bank).
 effect(async () => {
-  if (!isLoggedIn()) {
+  if (isSessionPending()) {
+    return
+  }
+
+  const loggedIn = isLoggedIn()
+  const previousLoggedIn = lastReadAuthLoggedIn()
+
+  if (previousLoggedIn !== null && previousLoggedIn !== loggedIn) {
     readQuestion.set(null)
 
     readAnswerVisible.setFalse()
-
-    return
   }
+
+  lastReadAuthLoggedIn.set(loggedIn)
 
   if (!homeRoute.exact()) {
     return
@@ -174,8 +194,9 @@ effect(async () => {
   await wrap(ensureReadQuestionLoaded())
 }, 'loadReadQuestionOnHome')
 
+// Enter: show answer first; after answer is visible, go to the next question.
 effect(() => {
-  if (!readAnswerVisible()) {
+  if (!homeRoute.exact() || !readQuestion()) {
     return
   }
 
@@ -184,7 +205,7 @@ effect(() => {
       return
     }
 
-    // Let the focused Next button handle Enter via its own click.
+    // Let the focused button handle Enter via its own click.
     if (event.target instanceof HTMLButtonElement) {
       return
     }
@@ -200,6 +221,13 @@ effect(() => {
 
     event.preventDefault()
 
+    if (!readAnswerVisible()) {
+      showReadAnswer()
+
+      return
+    }
+
     void pickReadQuestion()
   })
-}, 'nextReadQuestionOnEnter')
+}, 'readQuestionOnEnter')
+

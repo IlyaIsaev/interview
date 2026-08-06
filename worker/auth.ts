@@ -22,6 +22,7 @@ export const createAuth = (env: AuthEnv) => {
     }),
     emailAndPassword: {
       enabled: true,
+      disableSignUp: true,
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,

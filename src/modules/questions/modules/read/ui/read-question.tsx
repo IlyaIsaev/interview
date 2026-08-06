@@ -13,7 +13,7 @@ import {
 } from '@/common/components/ui/empty'
 import { Separator } from '@/common/components/ui/separator'
 import { Spinner } from '@/common/components/ui/spinner'
-import { isLoggedIn, isSessionPending } from '@/modules/auth'
+import { isSessionPending } from '@/modules/auth'
 
 import { openCreateQuestionDialog } from '../../create'
 import {
@@ -28,18 +28,21 @@ import {
 
 export const ReadQuestion = reatomComponent(() => {
   const sessionPending = isSessionPending()
-  const loggedIn = isLoggedIn()
 
   useEffect(() => {
-    if (sessionPending || !loggedIn) {
+    if (sessionPending) {
       return
     }
 
     void ensureReadQuestionLoaded()
-  }, [sessionPending, loggedIn])
+  }, [sessionPending])
 
-  if (sessionPending || !loggedIn) {
-    return null
+  if (sessionPending) {
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner className="size-5" />
+      </div>
+    )
   }
 
   const question = readQuestion()
@@ -86,24 +89,30 @@ export const ReadQuestion = reatomComponent(() => {
             {question.answer}
           </MarkdownContent>
         </>
-      ) : (
-        <Button type="button" variant="outline" onClick={wrap(showReadAnswer)}>
-          Show answer
-        </Button>
-      )}
+      ) : null}
 
-      {answerVisible ? (
+      <div className="mt-auto flex flex-wrap items-center justify-center gap-2">
+        {!answerVisible ? (
+          <Button
+            type="button"
+            variant="outline"
+            autoFocus
+            onClick={wrap(showReadAnswer)}
+          >
+            Show answer
+          </Button>
+        ) : null}
+
         <Button
           type="button"
           variant="secondary"
-          className="mt-auto"
-          autoFocus
           disabled={isLoading}
+          autoFocus={answerVisible}
           onClick={wrap(pickReadQuestion)}
         >
           {isLoading ? 'Loading…' : 'Next question'}
         </Button>
-      ) : null}
+      </div>
     </div>
   )
 }, 'ReadQuestion')
