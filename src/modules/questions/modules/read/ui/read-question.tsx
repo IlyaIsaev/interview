@@ -1,12 +1,24 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
+import { PlusIcon } from 'lucide-react'
+import { useEffect } from 'react'
 
+import { MarkdownContent } from '@/common/components/markdown'
 import { Button } from '@/common/components/ui/button'
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyTitle,
+} from '@/common/components/ui/empty'
 import { Separator } from '@/common/components/ui/separator'
 import { Spinner } from '@/common/components/ui/spinner'
 import { isLoggedIn, isSessionPending } from '@/modules/auth'
 
+import { openCreateQuestionDialog } from '../../create'
 import {
+  ensureReadQuestionLoaded,
+  fetchQuestionById,
   fetchRandomQuestion,
   pickReadQuestion,
   readAnswerVisible,
@@ -15,12 +27,24 @@ import {
 } from '../model/read-question'
 
 export const ReadQuestion = reatomComponent(() => {
-  if (isSessionPending() || !isLoggedIn()) {
+  const sessionPending = isSessionPending()
+  const loggedIn = isLoggedIn()
+
+  useEffect(() => {
+    if (sessionPending || !loggedIn) {
+      return
+    }
+
+    void ensureReadQuestionLoaded()
+  }, [sessionPending, loggedIn])
+
+  if (sessionPending || !loggedIn) {
     return null
   }
 
   const question = readQuestion()
-  const isLoading = fetchRandomQuestion.pending() > 0
+  const isLoading =
+    fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0
   const answerVisible = readAnswerVisible()
 
   if (isLoading && !question) {
@@ -32,7 +56,21 @@ export const ReadQuestion = reatomComponent(() => {
   }
 
   if (!question) {
-    return null
+    return (
+      <div className="mx-auto flex w-full max-w-sm flex-col items-center">
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyTitle>No questions yet</EmptyTitle>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button type="button" onClick={wrap(openCreateQuestionDialog)}>
+              <PlusIcon data-icon="inline-start" />
+              Add question
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    )
   }
 
   return (
@@ -44,9 +82,9 @@ export const ReadQuestion = reatomComponent(() => {
       {answerVisible ? (
         <>
           <Separator />
-          <p className="text-center text-base leading-relaxed text-muted-foreground text-balance whitespace-pre-wrap break-words">
+          <MarkdownContent className="w-full text-base text-muted-foreground">
             {question.answer}
-          </p>
+          </MarkdownContent>
         </>
       ) : (
         <Button type="button" variant="outline" onClick={wrap(showReadAnswer)}>

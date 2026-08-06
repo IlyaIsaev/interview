@@ -90,14 +90,22 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     const db = createDb(c.env.interview)
 
     const selectRandom = async (excludedId?: string) => {
-      const query = db.select().from(questions)
+      if (excludedId && isNonEmptyString(excludedId)) {
+        const [row] = await db
+          .select()
+          .from(questions)
+          .where(ne(questions.id, excludedId.trim()))
+          .orderBy(sql`RANDOM()`)
+          .limit(1)
 
-      const filtered =
-        excludedId && isNonEmptyString(excludedId)
-          ? query.where(ne(questions.id, excludedId.trim()))
-          : query
+        return row
+      }
 
-      const [row] = await filtered.orderBy(sql`RANDOM()`).limit(1)
+      const [row] = await db
+        .select()
+        .from(questions)
+        .orderBy(sql`RANDOM()`)
+        .limit(1)
 
       return row
     }

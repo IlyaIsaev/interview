@@ -35,6 +35,7 @@ import {
   openCreateQuestionDialog,
 } from '../modules/create'
 import { DeleteQuestionButton, DeleteQuestionDialog } from '../modules/delete'
+import { openReadQuestion } from '../modules/read'
 import { UpdateQuestionButton, UpdateQuestionDialog } from '../modules/update'
 import { fetchQuestions } from '../model/questions'
 
@@ -43,6 +44,12 @@ const questionsDrawerOpen = reatomBoolean(false, 'questionsDrawerOpen')
 const openQuestionsDrawer = action(() => {
   questionsDrawerOpen.setTrue()
 }, 'openQuestionsDrawer')
+
+const selectQuestionFromDrawer = action((questionId: string) => {
+  questionsDrawerOpen.setFalse()
+
+  void openReadQuestion(questionId)
+}, 'selectQuestionFromDrawer')
 
 effect(async () => {
   if (!questionsDrawerOpen()) {
@@ -131,7 +138,10 @@ export const QuestionsDrawer = reatomComponent(() => {
                   key={item.id}
                   variant="outline"
                   size="sm"
-                  className="flex-nowrap"
+                  className="cursor-pointer flex-nowrap"
+                  onClick={wrap(() => {
+                    selectQuestionFromDrawer(item.id)
+                  })}
                 >
                   <ItemContent className="w-2/3 overflow-hidden">
                     <ItemTitle className="w-full overflow-hidden">

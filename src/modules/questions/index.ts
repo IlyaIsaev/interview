@@ -38,7 +38,10 @@ export {
 
 export {
   ReadQuestion,
+  ensureReadQuestionLoaded,
+  fetchQuestionById,
   fetchRandomQuestion,
+  openReadQuestion,
   pickReadQuestion,
   readAnswerVisible,
   readQuestion,

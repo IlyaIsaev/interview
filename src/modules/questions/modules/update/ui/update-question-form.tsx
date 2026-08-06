@@ -8,13 +8,13 @@ import {
   FieldSet,
 } from '@/common/components/ui/field'
 
+import { MarkdownAnswerField } from '../../../ui/markdown-answer-field'
 import {
   closeUpdateQuestionDialog,
   loadUpdateQuestion,
   submitUpdateQuestionForm,
   updateQuestionForm,
 } from '../model/update-question'
-import { TextAreaField } from './text-area-field'
 import { TextField } from './text-field'
 
 export const UpdateQuestionForm = reatomComponent(() => {
@@ -45,7 +45,7 @@ export const UpdateQuestionForm = reatomComponent(() => {
             type="text"
             name="question"
           />
-          <TextAreaField
+          <MarkdownAnswerField
             field={updateQuestionForm.fields.answer}
             label="Answer"
             name="answer"
