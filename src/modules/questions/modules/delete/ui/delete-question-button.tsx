@@ -30,6 +30,7 @@ export const DeleteQuestionButton = reatomComponent(
               type="button"
               variant="ghost"
               size="icon-xs"
+              tabIndex={-1}
               aria-label="Delete question"
               onClick={handleOpen}
             />

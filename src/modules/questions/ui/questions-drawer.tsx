@@ -1,71 +1,63 @@
-import { action, effect, reatomBoolean, wrap } from '@reatom/core'
-import { reatomComponent } from '@reatom/react'
-import { PanelLeftIcon, PlusIcon } from 'lucide-react'
+import { action, effect, reatomBoolean, wrap } from "@reatom/core";
+import { reatomComponent } from "@reatom/react";
+import { PanelLeftIcon, PlusIcon } from "lucide-react";
+import type { KeyboardEvent } from "react";
 
-import { Button } from '@/common/components/ui/button'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/common/components/ui/drawer'
-import {
-  Empty,
-  EmptyContent,
-  EmptyHeader,
-  EmptyTitle,
-} from '@/common/components/ui/empty'
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemGroup,
-  ItemTitle,
-} from '@/common/components/ui/item'
-import { Spinner } from '@/common/components/ui/spinner'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/common/components/ui/tooltip'
-import { isSessionPending } from '@/modules/auth'
+import { Button } from "@/common/components/ui/button";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/common/components/ui/drawer";
+import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/common/components/ui/empty";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/common/components/ui/item";
+import { Spinner } from "@/common/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/common/components/ui/tooltip";
+import { isSessionPending } from "@/modules/auth";
 
-import {
-  CreateQuestionButton,
-  openCreateQuestionDialog,
-} from '../modules/create'
-import { DeleteQuestionButton, DeleteQuestionDialog } from '../modules/delete'
-import { openReadQuestion } from '../modules/read'
-import { UpdateQuestionButton, UpdateQuestionDialog } from '../modules/update'
-import { fetchQuestions } from '../model/questions'
+import { CreateQuestionButton, openCreateQuestionDialog } from "../modules/create";
+import { DeleteQuestionButton, DeleteQuestionDialog } from "../modules/delete";
+import { openReadQuestion } from "../modules/read";
+import { UpdateQuestionButton, UpdateQuestionDialog } from "../modules/update";
+import { fetchQuestions } from "../model/questions";
 
-const questionsDrawerOpen = reatomBoolean(false, 'questionsDrawerOpen')
+const questionsDrawerOpen = reatomBoolean(false, "questionsDrawerOpen");
 
 const openQuestionsDrawer = action(() => {
-  questionsDrawerOpen.setTrue()
-}, 'openQuestionsDrawer')
+  questionsDrawerOpen.setTrue();
+}, "openQuestionsDrawer");
 
 const selectQuestionFromDrawer = action((questionId: string) => {
-  questionsDrawerOpen.setFalse()
+  questionsDrawerOpen.setFalse();
 
-  void openReadQuestion(questionId)
-}, 'selectQuestionFromDrawer')
+  void openReadQuestion(questionId);
+}, "selectQuestionFromDrawer");
+
+const handleQuestionItemKeyDown = action((event: KeyboardEvent, questionId: string) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  // Action buttons handle their own keyboard activation.
+  if (event.target instanceof HTMLElement && event.target.closest("button")) {
+    return;
+  }
+
+  event.preventDefault();
+  selectQuestionFromDrawer(questionId);
+}, "handleQuestionItemKeyDown");
 
 effect(async () => {
   if (!questionsDrawerOpen()) {
-    return
+    return;
   }
 
-  await wrap(fetchQuestions())
-}, 'loadQuestionsWhenDrawerOpen')
+  await wrap(fetchQuestions());
+}, "loadQuestionsWhenDrawerOpen");
 
 export const QuestionsDrawer = reatomComponent(() => {
-  const questions = fetchQuestions.data()
-  const isPending = !fetchQuestions.ready() || isSessionPending()
-  const error = fetchQuestions.error()
+  const questions = fetchQuestions.data();
+  const isPending = !fetchQuestions.ready() || isSessionPending();
+  const error = fetchQuestions.error();
 
   if (isSessionPending()) {
-    return null
+    return null;
   }
 
   return (
@@ -108,7 +100,7 @@ export const QuestionsDrawer = reatomComponent(() => {
 
           {!isPending && error && questions.length === 0 ? (
             <p className="text-sm text-destructive">
-              {error.message || 'Failed to load questions'}
+              {error.message || "Failed to load questions"}
             </p>
           ) : null}
 
@@ -118,10 +110,7 @@ export const QuestionsDrawer = reatomComponent(() => {
                 <EmptyTitle>No questions yet</EmptyTitle>
               </EmptyHeader>
               <EmptyContent>
-                <Button
-                  type="button"
-                  onClick={wrap(openCreateQuestionDialog)}
-                >
+                <Button type="button" onClick={wrap(openCreateQuestionDialog)}>
                   <PlusIcon data-icon="inline-start" />
                   Add question
                 </Button>
@@ -134,11 +123,16 @@ export const QuestionsDrawer = reatomComponent(() => {
               {questions.map((item) => (
                 <Item
                   key={item.id}
+                  role="listitem"
+                  tabIndex={0}
                   variant="outline"
                   size="sm"
                   className="cursor-pointer flex-nowrap"
                   onClick={wrap(() => {
-                    selectQuestionFromDrawer(item.id)
+                    selectQuestionFromDrawer(item.id);
+                  })}
+                  onKeyDown={wrap((event: KeyboardEvent) => {
+                    handleQuestionItemKeyDown(event, item.id);
                   })}
                 >
                   <ItemContent className="w-2/3 overflow-hidden">
@@ -159,5 +153,5 @@ export const QuestionsDrawer = reatomComponent(() => {
         <DeleteQuestionDialog />
       </DrawerContent>
     </Drawer>
-  )
-}, 'QuestionsDrawer')
+  );
+}, "QuestionsDrawer");

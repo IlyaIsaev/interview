@@ -30,6 +30,7 @@ export const UpdateQuestionButton = reatomComponent(
               type="button"
               variant="ghost"
               size="icon-xs"
+              tabIndex={-1}
               aria-label="Update question"
               onClick={handleOpen}
             />
