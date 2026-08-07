@@ -95,6 +95,7 @@ export const ReadQuestion = reatomComponent(() => {
         {!answerVisible ? (
           <Button
             type="button"
+            size="lg"
             variant="outline"
             autoFocus
             onClick={wrap(showReadAnswer)}
@@ -105,6 +106,7 @@ export const ReadQuestion = reatomComponent(() => {
 
         <Button
           type="button"
+          size="lg"
           variant="secondary"
           disabled={isLoading}
           autoFocus={answerVisible}
