@@ -59,7 +59,7 @@ export function QuestionsVirtualList({
               role="listitem"
               data-index={virtualRow.index}
               ref={questionRowVirtualizer.measureElement}
-              className="absolute top-0 left-0 w-full"
+              className="absolute top-0 left-0 w-full p-1"
               style={{
                 transform: `translateY(${virtualRow.start}px)`,
               }}
