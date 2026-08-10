@@ -9,9 +9,7 @@ import {
   DialogTitle,
 } from '@/common/components/ui/dialog'
 
-import {
-  setCreateQuestionDialogOpen,
-} from '../model/create-question-form'
+import { setCreateQuestionDialogOpen } from '../model/create-question-form'
 import { createQuestionDialogOpen } from '../model/dialog-open'
 import { CreateQuestionForm } from './create-question-form'
 

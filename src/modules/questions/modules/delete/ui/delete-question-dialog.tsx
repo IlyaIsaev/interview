@@ -42,7 +42,10 @@ export const DeleteQuestionDialog = reatomComponent(() => {
 
   return (
     <Dialog open={questionId !== null} onOpenChange={handleDialogOpenChange}>
-      <DialogContent showCloseButton={!isDialogBusy} className="min-w-0 overflow-hidden">
+      <DialogContent
+        showCloseButton={!isDialogBusy}
+        className="min-w-0 overflow-hidden"
+      >
         {isLoadingQuestion || !questionToDelete ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="size-5" />

@@ -26,4 +26,3 @@ export const demoQuestions = sqliteTable('demo_questions', {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 })
-

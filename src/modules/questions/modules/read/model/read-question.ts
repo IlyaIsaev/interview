@@ -74,36 +74,39 @@ export const hydrateReadQuestionFromHomeLoader = action(
   'hydrateReadQuestionFromHomeLoader',
 )
 
-export const fetchRandomQuestion = action(async (excludeQuestionId?: string) => {
-  const response = excludeQuestionId
-    ? await api.questions.random.$get({
-        query: {
-          exclude: excludeQuestionId,
-        },
-      })
-    : await api.questions.random.$get()
+export const fetchRandomQuestion = action(
+  async (excludeQuestionId?: string) => {
+    const response = excludeQuestionId
+      ? await api.questions.random.$get({
+          query: {
+            exclude: excludeQuestionId,
+          },
+        })
+      : await api.questions.random.$get()
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      readQuestion.set(null)
+    if (!response.ok) {
+      if (response.status === 404) {
+        readQuestion.set(null)
 
-      readAnswerVisible.setFalse()
+        readAnswerVisible.setFalse()
 
-      return null
+        return null
+      }
+
+      throw new Error('Failed to load question')
     }
 
-    throw new Error('Failed to load question')
-  }
+    const responsePayload = await response.json()
+    const question = responsePayload.question as Question
 
-  const responsePayload = await response.json()
-  const question = responsePayload.question as Question
+    readQuestion.set(question)
 
-  readQuestion.set(question)
+    readAnswerVisible.setFalse()
 
-  readAnswerVisible.setFalse()
-
-  return question
-}, 'fetchRandomQuestion').extend(withAsync())
+    return question
+  },
+  'fetchRandomQuestion',
+).extend(withAsync())
 
 export const fetchQuestionById = action(async (questionId: string) => {
   const response = await api.questions[':id'].$get({

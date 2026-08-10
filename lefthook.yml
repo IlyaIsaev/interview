@@ -1,0 +1,11 @@
+# https://lefthook.dev/configuration/
+pre-commit:
+  commands:
+    format:
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs,json,css,md,yml,yaml,html}'
+      exclude:
+        - pnpm-lock.yaml
+        - dist/**
+        - drizzle/**
+      run: pnpm exec prettier --write {staged_files}
+      stage_fixed: true

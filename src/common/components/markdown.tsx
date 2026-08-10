@@ -22,7 +22,8 @@ const markdownOptions = {
     },
     h3: {
       props: {
-        className: 'mb-1.5 mt-3 text-base font-semibold tracking-tight first:mt-0',
+        className:
+          'mb-1.5 mt-3 text-base font-semibold tracking-tight first:mt-0',
       },
     },
     p: {
@@ -55,8 +56,7 @@ const markdownOptions = {
     },
     code: {
       props: {
-        className:
-          'rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.9em]',
+        className: 'rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.9em]',
       },
     },
     pre: {
@@ -83,7 +83,8 @@ const markdownOptions = {
     },
     th: {
       props: {
-        className: 'border border-border bg-muted/50 px-2 py-1 text-left font-medium',
+        className:
+          'border border-border bg-muted/50 px-2 py-1 text-left font-medium',
       },
     },
     td: {

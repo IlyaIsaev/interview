@@ -1,70 +1,87 @@
-import { action, reatomBoolean, wrap } from "@reatom/core";
-import { reatomComponent } from "@reatom/react";
-import { PanelLeftIcon, PlusIcon } from "lucide-react";
-import type { KeyboardEvent } from "react";
+import { action, reatomBoolean, wrap } from '@reatom/core'
+import { reatomComponent } from '@reatom/react'
+import { PanelLeftIcon, PlusIcon } from 'lucide-react'
+import type { KeyboardEvent } from 'react'
 
-import { isSessionPending } from "@/common/auth";
-import { Button } from "@/common/components/ui/button";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/common/components/ui/drawer";
-import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/common/components/ui/empty";
-import { Spinner } from "@/common/components/ui/spinner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/common/components/ui/tooltip";
-import { homeRoute } from "@/common/routes";
+import { isSessionPending } from '@/common/auth'
+import { Button } from '@/common/components/ui/button'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/common/components/ui/drawer'
+import {
+  Empty,
+  EmptyContent,
+  EmptyHeader,
+  EmptyTitle,
+} from '@/common/components/ui/empty'
+import { Spinner } from '@/common/components/ui/spinner'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/common/components/ui/tooltip'
+import { homeRoute } from '@/common/routes'
 
-import { CreateQuestionButton, openCreateQuestionDialog } from "../modules/create";
-import { DeleteQuestionDialog } from "../modules/delete";
-import { openReadQuestion } from "../modules/read";
-import { UpdateQuestionDialog } from "../modules/update";
+import {
+  CreateQuestionButton,
+  openCreateQuestionDialog,
+} from '../modules/create'
+import { DeleteQuestionDialog } from '../modules/delete'
+import { openReadQuestion } from '../modules/read'
+import { UpdateQuestionDialog } from '../modules/update'
 import {
   canCreateQuestion,
   isQuestionsLoaded,
   questions,
   questionsError,
-} from "../model/questions";
-import { QuestionsVirtualList } from "./questions-virtual-list";
+} from '../model/questions'
+import { QuestionsVirtualList } from './questions-virtual-list'
 
-const questionsDrawerOpen = reatomBoolean(false, "questionsDrawerOpen");
+const questionsDrawerOpen = reatomBoolean(false, 'questionsDrawerOpen')
 
 const openQuestionsDrawer = action(() => {
-  questionsDrawerOpen.setTrue();
-}, "openQuestionsDrawer");
+  questionsDrawerOpen.setTrue()
+}, 'openQuestionsDrawer')
 
 const selectQuestionFromDrawer = action((questionId: string) => {
-  questionsDrawerOpen.setFalse();
+  questionsDrawerOpen.setFalse()
 
-  void openReadQuestion(questionId);
-}, "selectQuestionFromDrawer");
+  void openReadQuestion(questionId)
+}, 'selectQuestionFromDrawer')
 
 const activateQuestionFromKeyboard = action(
   (keyboardEvent: KeyboardEvent, questionId: string) => {
-    if (keyboardEvent.key !== "Enter" && keyboardEvent.key !== " ") {
-      return;
+    if (keyboardEvent.key !== 'Enter' && keyboardEvent.key !== ' ') {
+      return
     }
 
     // Action buttons handle their own keyboard activation.
     if (
       keyboardEvent.target instanceof HTMLElement &&
-      keyboardEvent.target.closest("button")
+      keyboardEvent.target.closest('button')
     ) {
-      return;
+      return
     }
 
-    keyboardEvent.preventDefault();
-    selectQuestionFromDrawer(questionId);
+    keyboardEvent.preventDefault()
+    selectQuestionFromDrawer(questionId)
   },
-  "activateQuestionFromKeyboard",
-);
+  'activateQuestionFromKeyboard',
+)
 
 export const QuestionsDrawer = reatomComponent(() => {
-  const questionBank = questions();
+  const questionBank = questions()
   // List is hydrated from the home route loader; only show loading on home while it runs.
   const isQuestionsListLoading =
-    isSessionPending() || (homeRoute.exact() && !isQuestionsLoaded());
-  const questionsLoadError = questionsError();
-  const canAddQuestion = canCreateQuestion();
+    isSessionPending() || (homeRoute.exact() && !isQuestionsLoaded())
+  const questionsLoadError = questionsError()
+  const canAddQuestion = canCreateQuestion()
 
   if (isSessionPending()) {
-    return null;
+    return null
   }
 
   return (
@@ -109,7 +126,7 @@ export const QuestionsDrawer = reatomComponent(() => {
           questionsLoadError &&
           questionBank.length === 0 ? (
             <p className="text-sm text-destructive">
-              {questionsLoadError.message || "Failed to load questions"}
+              {questionsLoadError.message || 'Failed to load questions'}
             </p>
           ) : null}
 
@@ -145,5 +162,5 @@ export const QuestionsDrawer = reatomComponent(() => {
         <DeleteQuestionDialog />
       </DrawerContent>
     </Drawer>
-  );
-}, "QuestionsDrawer");
+  )
+}, 'QuestionsDrawer')

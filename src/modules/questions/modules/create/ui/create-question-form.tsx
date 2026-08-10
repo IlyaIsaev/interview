@@ -2,11 +2,7 @@ import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
 import { Button } from '@/common/components/ui/button'
-import {
-  FieldError,
-  FieldGroup,
-  FieldSet,
-} from '@/common/components/ui/field'
+import { FieldError, FieldGroup, FieldSet } from '@/common/components/ui/field'
 
 import { MarkdownAnswerField } from '../../../ui/markdown-answer-field'
 import {
@@ -26,10 +22,7 @@ export const CreateQuestionForm = reatomComponent(() => {
   })
 
   return (
-    <form
-      className="flex min-h-0 flex-1 flex-col"
-      onSubmit={handleSubmit}
-    >
+    <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
       <FieldSet
         className="flex min-h-0 flex-1 flex-col gap-4"
         disabled={isPending}

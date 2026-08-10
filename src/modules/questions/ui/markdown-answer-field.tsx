@@ -2,11 +2,7 @@ import type { FieldAtom } from '@reatom/core'
 import { bindField, reatomComponent } from '@reatom/react'
 
 import { MarkdownContent } from '@/common/components/markdown'
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from '@/common/components/ui/field'
+import { Field, FieldError, FieldLabel } from '@/common/components/ui/field'
 import { Textarea } from '@/common/components/ui/textarea'
 import { cn } from '@/common/lib/utils'
 
@@ -47,9 +43,7 @@ export const MarkdownAnswerField = reatomComponent(
             {answerMarkdown.trim() ? (
               <MarkdownContent>{answerMarkdown}</MarkdownContent>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Markdown preview
-              </p>
+              <p className="text-sm text-muted-foreground">Markdown preview</p>
             )}
           </div>
         </div>

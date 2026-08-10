@@ -3,11 +3,7 @@ import { reatomComponent } from '@reatom/react'
 
 import { signUp } from '@/common/auth'
 import { Button } from '@/common/components/ui/button'
-import {
-  FieldError,
-  FieldGroup,
-  FieldSet,
-} from '@/common/components/ui/field'
+import { FieldError, FieldGroup, FieldSet } from '@/common/components/ui/field'
 
 import { TextField } from './text-field'
 

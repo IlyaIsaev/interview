@@ -15,13 +15,17 @@ export const questions = atom<Question[]>([], 'questions')
 /** True after home loader data has been applied (or a mutation refreshed the list). */
 export const isQuestionsLoaded = atom(false, 'isQuestionsLoaded')
 
-export const questionsError = atom<Error | undefined>(undefined, 'questionsError')
+export const questionsError = atom<Error | undefined>(
+  undefined,
+  'questionsError',
+)
 
 /** Last home loader payload applied — identity check avoids re-render loops. */
 let lastHydratedHomeLoaderPayload: HomeLoaderData | null = null
 
-export const isHomeLoaderDataAlreadyHydrated = (homeLoaderPayload: HomeLoaderData) =>
-  lastHydratedHomeLoaderPayload === homeLoaderPayload
+export const isHomeLoaderDataAlreadyHydrated = (
+  homeLoaderPayload: HomeLoaderData,
+) => lastHydratedHomeLoaderPayload === homeLoaderPayload
 
 /** Apply home route loader payload into questions atoms (from the home page model). */
 export const hydrateQuestionsFromHomeLoader = action(

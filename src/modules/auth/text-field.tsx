@@ -1,11 +1,7 @@
 import type { FieldAtom } from '@reatom/core'
 import { bindField, reatomComponent } from '@reatom/react'
 
-import {
-  Field,
-  FieldError,
-  FieldLabel,
-} from '@/common/components/ui/field'
+import { Field, FieldError, FieldLabel } from '@/common/components/ui/field'
 
 import { Input } from '@/common/components/ui/input'
 

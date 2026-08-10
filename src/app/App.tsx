@@ -1,53 +1,53 @@
-import { action, effect, wrap } from "@reatom/core";
-import { reatomComponent } from "@reatom/react";
-import { lazy, Suspense } from "react";
+import { action, effect, wrap } from '@reatom/core'
+import { reatomComponent } from '@reatom/react'
+import { lazy, Suspense } from 'react'
 
-import { isLoggedIn, isSessionPending, signOut } from "@/common/auth";
-import { Toaster } from "@/common/components/ui/sonner";
-import { Spinner } from "@/common/components/ui/spinner";
-import { TooltipProvider } from "@/common/components/ui/tooltip";
-import { homeRoute, signInRoute, signUpRoute } from "@/common/routes";
+import { isLoggedIn, isSessionPending, signOut } from '@/common/auth'
+import { Toaster } from '@/common/components/ui/sonner'
+import { Spinner } from '@/common/components/ui/spinner'
+import { TooltipProvider } from '@/common/components/ui/tooltip'
+import { homeRoute, signInRoute, signUpRoute } from '@/common/routes'
 import {
   CreateQuestionButton,
   CreateQuestionDialog,
   QuestionsDrawer,
-} from "@/modules/questions";
+} from '@/modules/questions'
 
-const HomePage = lazy(() => import("./pages/home"));
+const HomePage = lazy(() => import('./pages/home'))
 
-const SignInPage = lazy(() => import("./pages/sign-in"));
+const SignInPage = lazy(() => import('./pages/sign-in'))
 
 function PageFallback() {
   return (
     <div className="flex w-full justify-center">
       <Spinner className="size-6" />
     </div>
-  );
+  )
 }
 
 const navigateToHome = action(() => {
-  homeRoute.go();
-}, "navigateToHome");
+  homeRoute.go()
+}, 'navigateToHome')
 
 const navigateToSignIn = action(() => {
-  signInRoute.go();
-}, "navigateToSignIn");
+  signInRoute.go()
+}, 'navigateToSignIn')
 
 const signOutCurrentUser = action(() => {
-  void signOut();
-}, "signOutCurrentUser");
+  void signOut()
+}, 'signOutCurrentUser')
 
 // Sign-up is disabled — send legacy /sign-up visits to sign-in (when guest).
 effect(() => {
   if (!signUpRoute.exact()) {
-    return;
+    return
   }
 
-  signInRoute.go();
-}, "redirectSignUpToSignIn");
+  signInRoute.go()
+}, 'redirectSignUpToSignIn')
 
 const App = reatomComponent(() => {
-  const isAuthSessionPending = isSessionPending();
+  const isAuthSessionPending = isSessionPending()
 
   return (
     <TooltipProvider>
@@ -104,7 +104,7 @@ const App = reatomComponent(() => {
       </div>
       <Toaster />
     </TooltipProvider>
-  );
-}, "App");
+  )
+}, 'App')
 
-export default App;
+export default App
