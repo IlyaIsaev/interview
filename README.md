@@ -2,7 +2,11 @@
 
 ## Business logic
 
-Interview is an app for practicing interview questions. Users work with a question bank (a shared demo bank as a guest, or a private bank when signed in): open random prompts, reveal answers, and manage their own questions.
+Interview is an app for practicing interview questions. Users work with a question bank: open random prompts, reveal answers, and manage their own questions.
+
+**Demo user (guest):** no account required. Uses a shared demo question bank with a create limit of 30 questions. That bank can be cleared at any time. Signed-in users get a private bank instead.
+
+Registration of new users is temporarily suspended.
 
 ## Architecture
 
