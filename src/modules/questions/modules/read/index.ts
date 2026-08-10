@@ -1,9 +1,9 @@
 export {
   adoptReadQuestionIfEmpty,
   clearReadQuestionIfId,
-  ensureReadQuestionLoaded,
   fetchQuestionById,
   fetchRandomQuestion,
+  hydrateReadQuestionFromHomeLoader,
   openReadQuestion,
   pickReadQuestion,
   readAnswerVisible,

@@ -1,4 +1,4 @@
-import { action, reatomForm, wrap } from '@reatom/core'
+import { action, reatomForm, urlAtom, wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
 import { Button } from '@/common/components/ui/button'
@@ -7,9 +7,8 @@ import {
   FieldGroup,
   FieldSet,
 } from '@/common/components/ui/field'
-import { homeRoute } from '@/common/routes'
 
-import { signUp } from './client'
+import { signUp } from '@/common/auth'
 import { TextField } from './text-field'
 
 export const signUpForm = reatomForm(
@@ -49,7 +48,7 @@ export const signUpForm = reatomForm(
         throw new Error(error.message ?? 'Failed to sign up')
       }
 
-      homeRoute.go()
+      urlAtom.go('/')
     },
   },
 )

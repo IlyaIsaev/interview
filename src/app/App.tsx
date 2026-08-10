@@ -2,11 +2,11 @@ import { effect, wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 import { lazy, Suspense } from "react";
 
+import { isLoggedIn, isSessionPending, signOut } from "@/common/auth";
 import { Toaster } from "@/common/components/ui/sonner";
 import { Spinner } from "@/common/components/ui/spinner";
 import { TooltipProvider } from "@/common/components/ui/tooltip";
 import { homeRoute, signInRoute, signUpRoute } from "@/common/routes";
-import { isLoggedIn, signOut } from "@/modules/auth";
 import {
   CreateQuestionButton,
   CreateQuestionDialog,
@@ -25,7 +25,7 @@ function PageFallback() {
   );
 }
 
-// Sign-up is disabled — send legacy /sign-up visits to sign-in.
+// Sign-up is disabled — send legacy /sign-up visits to sign-in (when guest).
 effect(() => {
   if (!signUpRoute.exact()) {
     return;
@@ -35,6 +35,7 @@ effect(() => {
 }, "redirectSignUpToSignIn");
 
 const App = reatomComponent(() => {
+  const sessionPending = isSessionPending();
   const handleSignOut = wrap(() => {
     void signOut();
   });
@@ -55,7 +56,9 @@ const App = reatomComponent(() => {
               <button
                 type="button"
                 className="text-sm font-medium"
-                onClick={wrap(homeRoute.go)}
+                onClick={wrap(() => {
+                  homeRoute.go();
+                })}
               >
                 Interview
               </button>
@@ -72,7 +75,9 @@ const App = reatomComponent(() => {
                   <button
                     type="button"
                     className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={wrap(signInRoute.go)}
+                    onClick={wrap(() => {
+                      signInRoute.go();
+                    })}
                   >
                     Sign in
                   </button>
@@ -82,10 +87,14 @@ const App = reatomComponent(() => {
           </div>
         </header>
         <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-10">
-          <Suspense fallback={<PageFallback />}>
-            {homeRoute.exact() ? <HomePage /> : null}
-            {signInRoute.exact() ? <SignInPage /> : null}
-          </Suspense>
+          {sessionPending ? (
+            <PageFallback />
+          ) : (
+            <Suspense fallback={<PageFallback />}>
+              {homeRoute.exact() ? <HomePage /> : null}
+              {signInRoute.exact() ? <SignInPage /> : null}
+            </Suspense>
+          )}
         </main>
       </div>
       <Toaster />

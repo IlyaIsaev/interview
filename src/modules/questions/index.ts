@@ -40,9 +40,9 @@ export {
   ReadQuestion,
   adoptReadQuestionIfEmpty,
   clearReadQuestionIfId,
-  ensureReadQuestionLoaded,
   fetchQuestionById,
   fetchRandomQuestion,
+  hydrateReadQuestionFromHomeLoader,
   openReadQuestion,
   pickReadQuestion,
   readAnswerVisible,
@@ -51,13 +51,19 @@ export {
   showReadAnswer,
 } from './modules/read'
 
+export { hydrateHomeLoaderData } from './model/hydrate-home-loader'
+
 export {
   canCreateQuestion,
   DEMO_QUESTIONS_LIMIT,
   demoQuestionsLimitMessage,
-  fetchQuestions,
+  hydrateQuestionsFromHomeLoader,
   isQuestionsLoaded,
-  loadQuestions,
+  prependQuestion,
+  questions,
+  questionsError,
+  removeQuestion,
+  replaceQuestion,
 } from './model/questions'
 
 export type { Question } from './model/questions'

@@ -5,17 +5,16 @@ import {
   onEvent,
   reatomBoolean,
   withAsync,
-  wrap,
 } from '@reatom/core'
 
 import { api } from '@/common/api'
+import type { HomeLoaderData } from '@/common/routes'
 import { homeRoute } from '@/common/routes'
-import { isLoggedIn, isSessionPending } from '@/modules/auth'
 
 import {
-  fetchQuestions,
-  isQuestionsLoaded,
+  questions,
   type Question,
+  wasHomeLoaderDataHydrated,
 } from '../../../model/questions'
 
 export const readQuestion = atom<Question | null>(null, 'readQuestion')
@@ -23,8 +22,6 @@ export const readQuestion = atom<Question | null>(null, 'readQuestion')
 export const readAnswerVisible = reatomBoolean(false, 'readAnswerVisible')
 
 const isOpeningReadQuestion = atom(false, 'isOpeningReadQuestion')
-
-const lastReadAuthLoggedIn = atom<boolean | null>(null, 'lastReadAuthLoggedIn')
 
 export const showReadAnswer = action(() => {
   readAnswerVisible.setTrue()
@@ -55,6 +52,27 @@ export const showCreatedReadQuestion = action((question: Question) => {
     isOpeningReadQuestion.set(false)
   }
 }, 'showCreatedReadQuestion')
+
+/**
+ * Apply home loader payload into the read atom (call from component render).
+ * Skips when this loader payload was already applied so "Next" is not reset.
+ */
+export const hydrateReadQuestionFromHomeLoader = action(
+  (data: HomeLoaderData) => {
+    if (wasHomeLoaderDataHydrated(data)) {
+      return
+    }
+
+    if (isOpeningReadQuestion()) {
+      return
+    }
+
+    readQuestion.set(data.randomQuestion)
+
+    readAnswerVisible.setFalse()
+  },
+  'hydrateReadQuestionFromHomeLoader',
+)
 
 export const fetchRandomQuestion = action(async (excludeId?: string) => {
   const response = excludeId
@@ -134,36 +152,20 @@ export const openReadQuestion = action(async (id: string) => {
   }
 }, 'openReadQuestion')
 
-export const ensureReadQuestionLoaded = action(async () => {
-  if (isSessionPending()) {
+export const clearReadQuestionIfId = action(async (id: string) => {
+  if (readQuestion()?.id !== id) {
     return
   }
 
-  if (isOpeningReadQuestion()) {
+  readQuestion.set(null)
+
+  readAnswerVisible.setFalse()
+
+  if (!homeRoute.exact()) {
     return
   }
 
-  // Wait for the site-level list load; do not start another GET /questions.
-  if (!isQuestionsLoaded()) {
-    return
-  }
-
-  if (readQuestion()) {
-    return
-  }
-
-  if (fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0) {
-    return
-  }
-
-  const questions = fetchQuestions.data()
-
-  // Empty bank: skip /random (would only 404) and show the empty state.
-  if (questions.length === 0) {
-    readQuestion.set(null)
-
-    readAnswerVisible.setFalse()
-
+  if (questions().length === 0) {
     return
   }
 
@@ -174,50 +176,7 @@ export const ensureReadQuestionLoaded = action(async () => {
 
     readAnswerVisible.setFalse()
   }
-}, 'ensureReadQuestionLoaded')
-
-export const clearReadQuestionIfId = action(async (id: string) => {
-  if (readQuestion()?.id !== id) {
-    return
-  }
-
-  readQuestion.set(null)
-
-  readAnswerVisible.setFalse()
-
-  if (homeRoute.exact()) {
-    await ensureReadQuestionLoaded()
-  }
 }, 'clearReadQuestionIfId')
-
-// Load a random question when home is open and the questions list has settled.
-effect(async () => {
-  if (isSessionPending()) {
-    return
-  }
-
-  const loggedIn = isLoggedIn()
-  const previousLoggedIn = lastReadAuthLoggedIn()
-
-  if (previousLoggedIn !== null && previousLoggedIn !== loggedIn) {
-    readQuestion.set(null)
-
-    readAnswerVisible.setFalse()
-  }
-
-  lastReadAuthLoggedIn.set(loggedIn)
-
-  if (!homeRoute.exact()) {
-    return
-  }
-
-  // Re-runs when isQuestionsLoaded flips true after the site-level list fetch.
-  if (!isQuestionsLoaded()) {
-    return
-  }
-
-  await wrap(ensureReadQuestionLoaded())
-}, 'loadReadQuestionOnHome')
 
 // Enter: show answer first; after answer is visible, go to the next question.
 effect(() => {
@@ -255,4 +214,3 @@ effect(() => {
     void pickReadQuestion()
   })
 }, 'readQuestionOnEnter')
-

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { api } from '@/common/api'
 
 import type { Question } from '../../../model/questions'
-import { loadQuestions } from '../../../model/questions'
+import { replaceQuestion } from '../../../model/questions'
 
 export const updateQuestionId = atom<string | null>(null, 'updateQuestionId')
 
@@ -59,9 +59,11 @@ export const updateQuestionForm = reatomForm(
           throw new Error(message)
         }
 
+        const data = await response.json()
+        const updated = data.question as Question
         const savedQuestion = question.trim()
 
-        await loadQuestions({ force: true })
+        replaceQuestion(updated)
 
         updateQuestionId.set(null)
 

@@ -12,9 +12,7 @@ import {
 } from '@/common/components/ui/empty'
 import { Separator } from '@/common/components/ui/separator'
 import { Spinner } from '@/common/components/ui/spinner'
-import { isSessionPending } from '@/modules/auth'
 
-import { isQuestionsLoaded } from '../../../model/questions'
 import { openCreateQuestionDialog } from '../../create'
 import {
   fetchQuestionById,
@@ -26,21 +24,9 @@ import {
 } from '../model/read-question'
 
 export const ReadQuestion = reatomComponent(() => {
-  const sessionPending = isSessionPending()
-
-  if (sessionPending) {
-    return (
-      <div className="flex w-full justify-center">
-        <Spinner className="size-5" />
-      </div>
-    )
-  }
-
   const question = readQuestion()
   const isLoading =
-    fetchRandomQuestion.pending() > 0 ||
-    fetchQuestionById.pending() > 0 ||
-    (!question && !isQuestionsLoaded())
+    fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0
   const answerVisible = readAnswerVisible()
 
   if (isLoading && !question) {

@@ -8,9 +8,9 @@ export {
   signUp,
   useSession,
   user,
-} from './client'
+} from '@/common/auth'
 
-export type { Session, User } from './client'
+export type { Session, User } from '@/common/auth'
 
 export { SignInForm, signInForm } from './sign-in-form'
 

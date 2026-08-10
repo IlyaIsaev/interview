@@ -1,9 +1,8 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
-import { SignUpForm } from '@/modules/auth'
-
 import { signInRoute } from '@/common/routes'
+import { SignUpForm } from '@/modules/auth'
 
 const SignUpPage = reatomComponent(() => {
   return (
@@ -20,7 +19,9 @@ const SignUpPage = reatomComponent(() => {
         <button
           type="button"
           className="text-foreground underline-offset-4 hover:underline"
-          onClick={wrap(signInRoute.go)}
+          onClick={wrap(() => {
+            signInRoute.go()
+          })}
         >
           Sign in
         </button>

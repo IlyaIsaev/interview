@@ -8,7 +8,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/common/compo
 import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/common/components/ui/empty";
 import { Spinner } from "@/common/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/common/components/ui/tooltip";
-import { isSessionPending } from "@/modules/auth";
+import { homeRoute } from "@/common/routes";
+import { isSessionPending } from "@/common/auth";
 
 import { CreateQuestionButton, openCreateQuestionDialog } from "../modules/create";
 import { DeleteQuestionDialog } from "../modules/delete";
@@ -16,8 +17,9 @@ import { openReadQuestion } from "../modules/read";
 import { UpdateQuestionDialog } from "../modules/update";
 import {
   canCreateQuestion,
-  fetchQuestions,
   isQuestionsLoaded,
+  questions,
+  questionsError,
 } from "../model/questions";
 import { QuestionsVirtualList } from "./questions-virtual-list";
 
@@ -48,11 +50,11 @@ const handleQuestionItemKeyDown = action((event: KeyboardEvent, questionId: stri
 }, "handleQuestionItemKeyDown");
 
 export const QuestionsDrawer = reatomComponent(() => {
-  const questions = fetchQuestions.data();
+  const items = questions();
+  // List is hydrated from the home route loader; only show loading on home while it runs.
   const isPending =
-    isSessionPending() ||
-    (!isQuestionsLoaded() && fetchQuestions.pending() > 0);
-  const error = fetchQuestions.error();
+    isSessionPending() || (homeRoute.exact() && !isQuestionsLoaded());
+  const error = questionsError();
   const allowedToCreate = canCreateQuestion();
 
   if (isSessionPending()) {
@@ -91,19 +93,19 @@ export const QuestionsDrawer = reatomComponent(() => {
           </div>
         </DrawerHeader>
         <div className="flex min-h-0 flex-1 flex-col p-4 pt-3">
-          {isPending && questions.length === 0 ? (
+          {isPending && items.length === 0 ? (
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <Spinner className="size-5" />
             </div>
           ) : null}
 
-          {!isPending && error && questions.length === 0 ? (
+          {!isPending && error && items.length === 0 ? (
             <p className="text-sm text-destructive">
               {error.message || "Failed to load questions"}
             </p>
           ) : null}
 
-          {!isPending && !error && questions.length === 0 ? (
+          {!isPending && !error && items.length === 0 ? (
             <Empty className="border border-dashed">
               <EmptyHeader>
                 <EmptyTitle>No questions yet</EmptyTitle>
@@ -121,9 +123,9 @@ export const QuestionsDrawer = reatomComponent(() => {
             </Empty>
           ) : null}
 
-          {questions.length > 0 ? (
+          {items.length > 0 ? (
             <QuestionsVirtualList
-              questions={questions}
+              questions={items}
               onSelect={selectQuestionFromDrawer}
               onItemKeyDown={handleQuestionItemKeyDown}
             />

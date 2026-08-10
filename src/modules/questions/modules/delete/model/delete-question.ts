@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { api } from '@/common/api'
 
 import type { Question } from '../../../model/questions'
-import { loadQuestions } from '../../../model/questions'
+import { removeQuestion } from '../../../model/questions'
 import { clearReadQuestionIfId } from '../../read'
 
 export const deleteQuestionId = atom<string | null>(null, 'deleteQuestionId')
@@ -106,7 +106,7 @@ export const deleteQuestion = action(async () => {
 
     const deletedQuestion = loaded?.question ?? 'Question'
 
-    await loadQuestions({ force: true })
+    removeQuestion(id)
 
     await clearReadQuestionIfId(id)
 

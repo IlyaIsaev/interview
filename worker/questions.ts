@@ -7,7 +7,7 @@ import { createDb, demoQuestions, questions } from '@/db'
 import type { AuthEnv, AuthVariables } from './auth'
 
 /** Max questions allowed in the shared demo bank (logged-out mode). */
-export const DEMO_QUESTIONS_LIMIT = 10
+export const DEMO_QUESTIONS_LIMIT = 30
 
 type QuestionBody = {
   question: string
