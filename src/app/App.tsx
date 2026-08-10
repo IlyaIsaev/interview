@@ -1,4 +1,4 @@
-import { effect, wrap } from "@reatom/core";
+import { action, effect, wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 import { lazy, Suspense } from "react";
 
@@ -25,6 +25,18 @@ function PageFallback() {
   );
 }
 
+const navigateToHome = action(() => {
+  homeRoute.go();
+}, "navigateToHome");
+
+const navigateToSignIn = action(() => {
+  signInRoute.go();
+}, "navigateToSignIn");
+
+const signOutCurrentUser = action(() => {
+  void signOut();
+}, "signOutCurrentUser");
+
 // Sign-up is disabled — send legacy /sign-up visits to sign-in (when guest).
 effect(() => {
   if (!signUpRoute.exact()) {
@@ -35,10 +47,7 @@ effect(() => {
 }, "redirectSignUpToSignIn");
 
 const App = reatomComponent(() => {
-  const sessionPending = isSessionPending();
-  const handleSignOut = wrap(() => {
-    void signOut();
-  });
+  const isAuthSessionPending = isSessionPending();
 
   return (
     <TooltipProvider>
@@ -56,9 +65,7 @@ const App = reatomComponent(() => {
               <button
                 type="button"
                 className="text-sm font-medium"
-                onClick={wrap(() => {
-                  homeRoute.go();
-                })}
+                onClick={wrap(navigateToHome)}
               >
                 Interview
               </button>
@@ -67,7 +74,7 @@ const App = reatomComponent(() => {
                   <button
                     type="button"
                     className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={handleSignOut}
+                    onClick={wrap(signOutCurrentUser)}
                   >
                     Sign out
                   </button>
@@ -75,9 +82,7 @@ const App = reatomComponent(() => {
                   <button
                     type="button"
                     className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={wrap(() => {
-                      signInRoute.go();
-                    })}
+                    onClick={wrap(navigateToSignIn)}
                   >
                     Sign in
                   </button>
@@ -87,7 +92,7 @@ const App = reatomComponent(() => {
           </div>
         </header>
         <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-10">
-          {sessionPending ? (
+          {isAuthSessionPending ? (
             <PageFallback />
           ) : (
             <Suspense fallback={<PageFallback />}>

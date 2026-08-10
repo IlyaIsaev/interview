@@ -24,12 +24,12 @@ import {
 } from '../model/read-question'
 
 export const ReadQuestion = reatomComponent(() => {
-  const question = readQuestion()
-  const isLoading =
+  const currentQuestion = readQuestion()
+  const isQuestionLoading =
     fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0
-  const answerVisible = readAnswerVisible()
+  const isAnswerVisible = readAnswerVisible()
 
-  if (isLoading && !question) {
+  if (isQuestionLoading && !currentQuestion) {
     return (
       <div className="flex w-full justify-center">
         <Spinner className="size-5" />
@@ -37,7 +37,7 @@ export const ReadQuestion = reatomComponent(() => {
     )
   }
 
-  if (!question) {
+  if (!currentQuestion) {
     return (
       <div className="mx-auto flex w-full max-w-sm flex-col items-center">
         <Empty className="border border-dashed">
@@ -58,20 +58,20 @@ export const ReadQuestion = reatomComponent(() => {
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col items-center gap-6 self-stretch">
       <h2 className="text-center text-2xl font-medium tracking-tight text-balance">
-        {question.question}
+        {currentQuestion.question}
       </h2>
 
-      {answerVisible ? (
+      {isAnswerVisible ? (
         <>
           <Separator />
           <MarkdownContent className="w-full text-base text-muted-foreground">
-            {question.answer}
+            {currentQuestion.answer}
           </MarkdownContent>
         </>
       ) : null}
 
       <div className="mt-auto flex flex-wrap items-center justify-center gap-2">
-        {!answerVisible ? (
+        {!isAnswerVisible ? (
           <Button
             type="button"
             size="lg"
@@ -87,11 +87,11 @@ export const ReadQuestion = reatomComponent(() => {
           type="button"
           size="lg"
           variant="secondary"
-          disabled={isLoading}
-          autoFocus={answerVisible}
+          disabled={isQuestionLoading}
+          autoFocus={isAnswerVisible}
           onClick={wrap(pickReadQuestion)}
         >
-          {isLoading ? 'Loading…' : 'Next question'}
+          {isQuestionLoading ? 'Loading…' : 'Next question'}
         </Button>
       </div>
     </div>

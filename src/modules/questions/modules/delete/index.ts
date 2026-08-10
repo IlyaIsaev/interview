@@ -1,10 +1,10 @@
 export {
   closeDeleteQuestionDialog,
   deleteQuestion,
-  deleteQuestionData,
   deleteQuestionId,
   loadDeleteQuestion,
   openDeleteQuestionDialog,
+  questionPendingDeletion,
   setDeleteQuestionDialogOpen,
   submitDeleteQuestion,
 } from './model/delete-question'

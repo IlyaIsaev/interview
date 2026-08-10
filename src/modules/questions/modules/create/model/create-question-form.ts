@@ -2,6 +2,10 @@ import { action, reatomForm } from "@reatom/core";
 import { toast } from "sonner";
 
 import { api } from "@/common/api";
+import {
+  readApiErrorMessage,
+  readUnknownErrorMessage,
+} from "@/common/lib/error-message";
 
 import type { Question } from "../../../model/questions";
 import { prependQuestion } from "../../../model/questions";
@@ -36,37 +40,39 @@ export const createQuestionForm = reatomForm(
         });
 
         if (!response.ok) {
-          const data = await response.json().catch(() => null);
+          const errorPayload = await response.json().catch(() => null);
+          const errorMessage = readApiErrorMessage(
+            errorPayload,
+            "Failed to save question",
+          );
 
-          const message =
-            data && "error" in data && typeof data.error === "string"
-              ? data.error
-              : "Failed to save question";
-
-          throw new Error(message);
+          throw new Error(errorMessage);
         }
 
-        const data = await response.json();
-        const created = data.question as Question;
-        const savedQuestion = created.question;
+        const responsePayload = await response.json();
+        const createdQuestion = responsePayload.question as Question;
+        const createdQuestionTitle = createdQuestion.question;
 
-        prependQuestion(created);
+        prependQuestion(createdQuestion);
 
         createQuestionDialogOpen.setFalse();
 
-        showCreatedReadQuestion(created);
+        showCreatedReadQuestion(createdQuestion);
 
-        toast.success(`“${savedQuestion}” created`, {
+        toast.success(`“${createdQuestionTitle}” created`, {
           classNames: {
             title: "line-clamp-2 min-w-0 break-all whitespace-normal",
           },
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to save question";
+        const errorMessage = readUnknownErrorMessage(
+          error,
+          "Failed to save question",
+        );
 
-        toast.error(message);
+        toast.error(errorMessage);
 
-        throw error instanceof Error ? error : new Error(message);
+        throw error instanceof Error ? error : new Error(errorMessage);
       }
     },
   },
@@ -78,10 +84,10 @@ export const closeCreateQuestionDialog = action(() => {
   createQuestionForm.reset();
 }, "closeCreateQuestionDialog");
 
-export const setCreateQuestionDialogOpen = action((open: boolean) => {
-  createQuestionDialogOpen.set(open);
+export const setCreateQuestionDialogOpen = action((isOpen: boolean) => {
+  createQuestionDialogOpen.set(isOpen);
 
-  if (!open) {
+  if (!isOpen) {
     createQuestionForm.reset();
   }
 }, "setCreateQuestionDialogOpen");
@@ -93,4 +99,3 @@ export const submitCreateQuestionForm = action(async () => {
     // Validation stays on the form; API errors also toast.
   }
 }, "submitCreateQuestionForm");
-

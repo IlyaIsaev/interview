@@ -16,8 +16,10 @@ import {
 import { openCreateQuestionDialog } from '../model/dialog-open'
 
 export const CreateQuestionButton = reatomComponent(() => {
-  const allowed = canCreateQuestion()
-  const label = allowed ? 'Add a new question' : demoQuestionsLimitMessage
+  const canAddQuestion = canCreateQuestion()
+  const createQuestionLabel = canAddQuestion
+    ? 'Add a new question'
+    : demoQuestionsLimitMessage
 
   return (
     <Tooltip>
@@ -26,14 +28,14 @@ export const CreateQuestionButton = reatomComponent(() => {
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={label}
-          disabled={!allowed}
+          aria-label={createQuestionLabel}
+          disabled={!canAddQuestion}
           onClick={wrap(openCreateQuestionDialog)}
         >
           <PlusIcon />
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="bottom">{label}</TooltipContent>
+      <TooltipContent side="bottom">{createQuestionLabel}</TooltipContent>
     </Tooltip>
   )
 }, 'CreateQuestionButton')

@@ -14,18 +14,18 @@ type QuestionBody = {
   answer: string
 }
 
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim().length > 0
+const isNonEmptyString = (candidate: unknown): candidate is string =>
+  typeof candidate === 'string' && candidate.trim().length > 0
 
-const getQuestionsTable = (user: AuthVariables['user']) =>
+const getQuestionsTableForUser = (user: AuthVariables['user']) =>
   user ? questions : demoQuestions
 
-const questionBodyValidator = validator('json', (value, c) => {
-  if (!value || typeof value !== 'object') {
+const questionBodyValidator = validator('json', (requestBody, c) => {
+  if (!requestBody || typeof requestBody !== 'object') {
     return c.json({ error: 'Invalid JSON body' as const }, 400)
   }
 
-  const body = value as {
+  const body = requestBody as {
     question?: unknown
     answer?: unknown
   }
@@ -47,29 +47,29 @@ const questionBodyValidator = validator('json', (value, c) => {
 export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   .get('/api/questions', async (c) => {
     const user = c.get('user')
-    const table = getQuestionsTable(user)
+    const questionsTable = getQuestionsTableForUser(user)
     const db = createDb(c.env.interview)
 
-    const rows = await db
+    const questionRows = await db
       .select()
-      .from(table)
-      .orderBy(desc(table.createdAt))
+      .from(questionsTable)
+      .orderBy(desc(questionsTable.createdAt))
 
-    return c.json({ questions: rows }, 200)
+    return c.json({ questions: questionRows }, 200)
   })
   .post('/api/questions', questionBodyValidator, async (c) => {
     const user = c.get('user')
-    const table = getQuestionsTable(user)
+    const questionsTable = getQuestionsTableForUser(user)
     const { question, answer } = c.req.valid('json')
     const db = createDb(c.env.interview)
 
     // Demo bank is shared and unbounded otherwise — cap create for logged-out users.
     if (!user) {
-      const [result] = await db
+      const [demoQuestionCountRow] = await db
         .select({ value: count() })
         .from(demoQuestions)
 
-      if ((result?.value ?? 0) >= DEMO_QUESTIONS_LIMIT) {
+      if ((demoQuestionCountRow?.value ?? 0) >= DEMO_QUESTIONS_LIMIT) {
         return c.json(
           {
             error: `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`,
@@ -79,60 +79,62 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
       }
     }
 
-    const id = crypto.randomUUID()
+    const questionId = crypto.randomUUID()
 
-    const [created] = await db
-      .insert(table)
+    const [createdQuestion] = await db
+      .insert(questionsTable)
       .values({
-        id,
+        id: questionId,
         question,
         answer,
       })
       .returning()
 
-    return c.json({ question: created }, 201)
+    return c.json({ question: createdQuestion }, 201)
   })
   .get('/api/questions/random', async (c) => {
     const user = c.get('user')
-    const table = getQuestionsTable(user)
-    const exclude = c.req.query('exclude')
+    const questionsTable = getQuestionsTableForUser(user)
+    const excludeQuery = c.req.query('exclude')
     const db = createDb(c.env.interview)
 
-    const selectRandom = async (excludedId?: string) => {
-      if (excludedId && isNonEmptyString(excludedId)) {
-        const [row] = await db
+    const selectRandomQuestion = async (excludedQuestionId?: string) => {
+      if (excludedQuestionId && isNonEmptyString(excludedQuestionId)) {
+        const [questionRow] = await db
           .select()
-          .from(table)
-          .where(ne(table.id, excludedId.trim()))
+          .from(questionsTable)
+          .where(ne(questionsTable.id, excludedQuestionId.trim()))
           .orderBy(sql`RANDOM()`)
           .limit(1)
 
-        return row
+        return questionRow
       }
 
-      const [row] = await db
+      const [questionRow] = await db
         .select()
-        .from(table)
+        .from(questionsTable)
         .orderBy(sql`RANDOM()`)
         .limit(1)
 
-      return row
+      return questionRow
     }
 
-    const excludedId =
-      exclude && isNonEmptyString(exclude) ? exclude.trim() : undefined
+    const excludedQuestionId =
+      excludeQuery && isNonEmptyString(excludeQuery)
+        ? excludeQuery.trim()
+        : undefined
 
-    const preferred = await selectRandom(excludedId)
+    const preferredQuestion = await selectRandomQuestion(excludedQuestionId)
 
-    if (preferred) {
-      return c.json({ question: preferred }, 200)
+    if (preferredQuestion) {
+      return c.json({ question: preferredQuestion }, 200)
     }
 
-    if (excludedId) {
-      const fallback = await selectRandom()
+    if (excludedQuestionId) {
+      const fallbackQuestion = await selectRandomQuestion()
 
-      if (fallback) {
-        return c.json({ question: fallback }, 200)
+      if (fallbackQuestion) {
+        return c.json({ question: fallbackQuestion }, 200)
       }
     }
 
@@ -140,73 +142,73 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   })
   .get('/api/questions/:id', async (c) => {
     const user = c.get('user')
-    const table = getQuestionsTable(user)
-    const id = c.req.param('id')
+    const questionsTable = getQuestionsTableForUser(user)
+    const questionId = c.req.param('id')
 
-    if (!isNonEmptyString(id)) {
+    if (!isNonEmptyString(questionId)) {
       return c.json({ error: 'Question id is required' as const }, 400)
     }
 
     const db = createDb(c.env.interview)
 
-    const [row] = await db
+    const [questionRow] = await db
       .select()
-      .from(table)
-      .where(eq(table.id, id.trim()))
+      .from(questionsTable)
+      .where(eq(questionsTable.id, questionId.trim()))
       .limit(1)
 
-    if (!row) {
+    if (!questionRow) {
       return c.json({ error: 'Question not found' as const }, 404)
     }
 
-    return c.json({ question: row }, 200)
+    return c.json({ question: questionRow }, 200)
   })
   .put('/api/questions/:id', questionBodyValidator, async (c) => {
     const user = c.get('user')
-    const table = getQuestionsTable(user)
-    const id = c.req.param('id')
+    const questionsTable = getQuestionsTableForUser(user)
+    const questionId = c.req.param('id')
 
-    if (!isNonEmptyString(id)) {
+    if (!isNonEmptyString(questionId)) {
       return c.json({ error: 'Question id is required' as const }, 400)
     }
 
     const { question, answer } = c.req.valid('json')
     const db = createDb(c.env.interview)
 
-    const [updated] = await db
-      .update(table)
+    const [updatedQuestion] = await db
+      .update(questionsTable)
       .set({
         question,
         answer,
       })
-      .where(eq(table.id, id.trim()))
+      .where(eq(questionsTable.id, questionId.trim()))
       .returning()
 
-    if (!updated) {
+    if (!updatedQuestion) {
       return c.json({ error: 'Question not found' as const }, 404)
     }
 
-    return c.json({ question: updated }, 200)
+    return c.json({ question: updatedQuestion }, 200)
   })
   .delete('/api/questions/:id', async (c) => {
     const user = c.get('user')
-    const table = getQuestionsTable(user)
-    const id = c.req.param('id')
+    const questionsTable = getQuestionsTableForUser(user)
+    const questionId = c.req.param('id')
 
-    if (!isNonEmptyString(id)) {
+    if (!isNonEmptyString(questionId)) {
       return c.json({ error: 'Question id is required' as const }, 400)
     }
 
     const db = createDb(c.env.interview)
 
-    const [deleted] = await db
-      .delete(table)
-      .where(eq(table.id, id.trim()))
+    const [deletedQuestion] = await db
+      .delete(questionsTable)
+      .where(eq(questionsTable.id, questionId.trim()))
       .returning()
 
-    if (!deleted) {
+    if (!deletedQuestion) {
       return c.json({ error: 'Question not found' as const }, 404)
     }
 
-    return c.json({ question: deleted }, 200)
+    return c.json({ question: deletedQuestion }, 200)
   })

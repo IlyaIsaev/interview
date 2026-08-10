@@ -1,6 +1,7 @@
 import { action, reatomForm, urlAtom, wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
+import { signIn } from '@/common/auth'
 import { Button } from '@/common/components/ui/button'
 import {
   FieldError,
@@ -8,7 +9,6 @@ import {
   FieldSet,
 } from '@/common/components/ui/field'
 
-import { signIn } from '@/common/auth'
 import { TextField } from './text-field'
 
 export const signInForm = reatomForm(
@@ -33,13 +33,13 @@ export const signInForm = reatomForm(
       }
     },
     onSubmit: async ({ email, password }) => {
-      const { error } = await signIn.email({
+      const { error: signInError } = await signIn.email({
         email,
         password,
       })
 
-      if (error) {
-        throw new Error(error.message ?? 'Failed to sign in')
+      if (signInError) {
+        throw new Error(signInError.message ?? 'Failed to sign in')
       }
 
       urlAtom.go('/')
@@ -56,17 +56,19 @@ export const submitSignInForm = action(async () => {
 }, 'submitSignInForm')
 
 export const SignInForm = reatomComponent(() => {
-  const submitError = signInForm.submit.error()
-  const isPending = signInForm.submit.pending() > 0
+  const signInSubmitError = signInForm.submit.error()
+  const isSignInPending = signInForm.submit.pending() > 0
 
-  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    void submitSignInForm()
-  })
+  const handleSignInFormSubmit = wrap(
+    (formEvent: React.FormEvent<HTMLFormElement>) => {
+      formEvent.preventDefault()
+      void submitSignInForm()
+    },
+  )
 
   return (
-    <form onSubmit={handleSubmit}>
-      <FieldSet disabled={isPending}>
+    <form onSubmit={handleSignInFormSubmit}>
+      <FieldSet disabled={isSignInPending}>
         <FieldGroup>
           <TextField
             field={signInForm.fields.email}
@@ -82,9 +84,9 @@ export const SignInForm = reatomComponent(() => {
             name="password"
             autoComplete="current-password"
           />
-          <FieldError>{submitError?.message}</FieldError>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? 'Signing in…' : 'Sign in'}
+          <FieldError>{signInSubmitError?.message}</FieldError>
+          <Button type="submit" disabled={isSignInPending}>
+            {isSignInPending ? 'Signing in…' : 'Sign in'}
           </Button>
         </FieldGroup>
       </FieldSet>

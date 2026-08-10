@@ -19,25 +19,24 @@ type TextFieldProps = {
 
 export const TextField = reatomComponent(
   ({ field, label, type = 'text', autoComplete, name }: TextFieldProps) => {
-    const bound = bindField(field)
-
-    const hasError = Boolean(bound.error)
+    const fieldBinding = bindField(field)
+    const hasValidationError = Boolean(fieldBinding.error)
 
     return (
-      <Field data-invalid={hasError || undefined}>
+      <Field data-invalid={hasValidationError || undefined}>
         <FieldLabel htmlFor={name}>{label}</FieldLabel>
         <Input
           id={name}
           type={type}
           name={name}
           autoComplete={autoComplete}
-          aria-invalid={hasError || undefined}
-          value={bound.value ?? ''}
-          onChange={bound.onChange}
-          onBlur={bound.onBlur}
-          onFocus={bound.onFocus}
+          aria-invalid={hasValidationError || undefined}
+          value={fieldBinding.value ?? ''}
+          onChange={fieldBinding.onChange}
+          onBlur={fieldBinding.onBlur}
+          onFocus={fieldBinding.onFocus}
         />
-        <FieldError>{bound.error}</FieldError>
+        <FieldError>{fieldBinding.error}</FieldError>
       </Field>
     )
   },

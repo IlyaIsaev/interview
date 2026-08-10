@@ -3,13 +3,13 @@ import { reatomComponent } from "@reatom/react";
 import { PanelLeftIcon, PlusIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
+import { isSessionPending } from "@/common/auth";
 import { Button } from "@/common/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/common/components/ui/drawer";
 import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/common/components/ui/empty";
 import { Spinner } from "@/common/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/common/components/ui/tooltip";
 import { homeRoute } from "@/common/routes";
-import { isSessionPending } from "@/common/auth";
 
 import { CreateQuestionButton, openCreateQuestionDialog } from "../modules/create";
 import { DeleteQuestionDialog } from "../modules/delete";
@@ -35,27 +35,33 @@ const selectQuestionFromDrawer = action((questionId: string) => {
   void openReadQuestion(questionId);
 }, "selectQuestionFromDrawer");
 
-const handleQuestionItemKeyDown = action((event: KeyboardEvent, questionId: string) => {
-  if (event.key !== "Enter" && event.key !== " ") {
-    return;
-  }
+const activateQuestionFromKeyboard = action(
+  (keyboardEvent: KeyboardEvent, questionId: string) => {
+    if (keyboardEvent.key !== "Enter" && keyboardEvent.key !== " ") {
+      return;
+    }
 
-  // Action buttons handle their own keyboard activation.
-  if (event.target instanceof HTMLElement && event.target.closest("button")) {
-    return;
-  }
+    // Action buttons handle their own keyboard activation.
+    if (
+      keyboardEvent.target instanceof HTMLElement &&
+      keyboardEvent.target.closest("button")
+    ) {
+      return;
+    }
 
-  event.preventDefault();
-  selectQuestionFromDrawer(questionId);
-}, "handleQuestionItemKeyDown");
+    keyboardEvent.preventDefault();
+    selectQuestionFromDrawer(questionId);
+  },
+  "activateQuestionFromKeyboard",
+);
 
 export const QuestionsDrawer = reatomComponent(() => {
-  const items = questions();
+  const questionBank = questions();
   // List is hydrated from the home route loader; only show loading on home while it runs.
-  const isPending =
+  const isQuestionsListLoading =
     isSessionPending() || (homeRoute.exact() && !isQuestionsLoaded());
-  const error = questionsError();
-  const allowedToCreate = canCreateQuestion();
+  const questionsLoadError = questionsError();
+  const canAddQuestion = canCreateQuestion();
 
   if (isSessionPending()) {
     return null;
@@ -93,19 +99,23 @@ export const QuestionsDrawer = reatomComponent(() => {
           </div>
         </DrawerHeader>
         <div className="flex min-h-0 flex-1 flex-col p-4 pt-3">
-          {isPending && items.length === 0 ? (
+          {isQuestionsListLoading && questionBank.length === 0 ? (
             <div className="flex min-h-0 flex-1 items-center justify-center">
               <Spinner className="size-5" />
             </div>
           ) : null}
 
-          {!isPending && error && items.length === 0 ? (
+          {!isQuestionsListLoading &&
+          questionsLoadError &&
+          questionBank.length === 0 ? (
             <p className="text-sm text-destructive">
-              {error.message || "Failed to load questions"}
+              {questionsLoadError.message || "Failed to load questions"}
             </p>
           ) : null}
 
-          {!isPending && !error && items.length === 0 ? (
+          {!isQuestionsListLoading &&
+          !questionsLoadError &&
+          questionBank.length === 0 ? (
             <Empty className="border border-dashed">
               <EmptyHeader>
                 <EmptyTitle>No questions yet</EmptyTitle>
@@ -113,7 +123,7 @@ export const QuestionsDrawer = reatomComponent(() => {
               <EmptyContent>
                 <Button
                   type="button"
-                  disabled={!allowedToCreate}
+                  disabled={!canAddQuestion}
                   onClick={wrap(openCreateQuestionDialog)}
                 >
                   <PlusIcon data-icon="inline-start" />
@@ -123,11 +133,11 @@ export const QuestionsDrawer = reatomComponent(() => {
             </Empty>
           ) : null}
 
-          {items.length > 0 ? (
+          {questionBank.length > 0 ? (
             <QuestionsVirtualList
-              questions={items}
-              onSelect={selectQuestionFromDrawer}
-              onItemKeyDown={handleQuestionItemKeyDown}
+              questions={questionBank}
+              onQuestionSelect={selectQuestionFromDrawer}
+              onQuestionKeyDown={activateQuestionFromKeyboard}
             />
           ) : null}
         </div>

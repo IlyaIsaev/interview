@@ -2,6 +2,10 @@ import { action, atom, effect, withAsync, wrap } from '@reatom/core'
 import { toast } from 'sonner'
 
 import { api } from '@/common/api'
+import {
+  readApiErrorMessage,
+  readUnknownErrorMessage,
+} from '@/common/lib/error-message'
 
 import type { Question } from '../../../model/questions'
 import { removeQuestion } from '../../../model/questions'
@@ -9,55 +13,56 @@ import { clearReadQuestionIfId } from '../../read'
 
 export const deleteQuestionId = atom<string | null>(null, 'deleteQuestionId')
 
-export const deleteQuestionData = atom<Question | null>(null, 'deleteQuestionData')
+export const questionPendingDeletion = atom<Question | null>(
+  null,
+  'questionPendingDeletion',
+)
 
 export const loadDeleteQuestion = action(async () => {
-  const id = deleteQuestionId()
+  const questionId = deleteQuestionId()
 
-  if (!id) {
+  if (!questionId) {
     throw new Error('No question selected for deletion')
   }
 
   const response = await api.questions[':id'].$get({
     param: {
-      id,
+      id: questionId,
     },
   })
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null)
+    const errorPayload = await response.json().catch(() => null)
+    const errorMessage = readApiErrorMessage(
+      errorPayload,
+      'Failed to load question',
+    )
 
-    const message =
-      data && 'error' in data && typeof data.error === 'string'
-        ? data.error
-        : 'Failed to load question'
-
-    throw new Error(message)
+    throw new Error(errorMessage)
   }
 
-  const data = await response.json()
+  const responsePayload = await response.json()
+  const question = responsePayload.question as Question
 
-  const question = data.question as Question
-
-  deleteQuestionData.set(question)
+  questionPendingDeletion.set(question)
 
   return question
 }, 'loadDeleteQuestion').extend(withAsync())
 
-export const openDeleteQuestionDialog = action((id: string) => {
+export const openDeleteQuestionDialog = action((questionId: string) => {
   deleteQuestion.error.set(undefined)
 
   loadDeleteQuestion.error.set(undefined)
 
-  deleteQuestionData.set(null)
+  questionPendingDeletion.set(null)
 
-  deleteQuestionId.set(id)
+  deleteQuestionId.set(questionId)
 }, 'openDeleteQuestionDialog')
 
 export const closeDeleteQuestionDialog = action(() => {
   deleteQuestionId.set(null)
 
-  deleteQuestionData.set(null)
+  questionPendingDeletion.set(null)
 
   deleteQuestion.error.set(undefined)
 
@@ -65,8 +70,8 @@ export const closeDeleteQuestionDialog = action(() => {
 }, 'closeDeleteQuestionDialog')
 
 export const setDeleteQuestionDialogOpen = action(
-  (open: boolean, isBusy: boolean) => {
-    if (!open && !isBusy) {
+  (isOpen: boolean, isBusy: boolean) => {
+    if (!isOpen && !isBusy) {
       closeDeleteQuestionDialog()
     }
   },
@@ -74,58 +79,58 @@ export const setDeleteQuestionDialogOpen = action(
 )
 
 export const deleteQuestion = action(async () => {
-  const id = deleteQuestionId()
+  const questionId = deleteQuestionId()
+  const questionToDelete = questionPendingDeletion()
 
-  const loaded = deleteQuestionData()
+  if (!questionId) {
+    const errorMessage = 'No question selected for deletion'
 
-  if (!id) {
-    const message = 'No question selected for deletion'
+    toast.error(errorMessage)
 
-    toast.error(message)
-
-    throw new Error(message)
+    throw new Error(errorMessage)
   }
 
   try {
     const response = await api.questions[':id'].$delete({
       param: {
-        id,
+        id: questionId,
       },
     })
 
     if (!response.ok) {
-      const data = await response.json().catch(() => null)
+      const errorPayload = await response.json().catch(() => null)
+      const errorMessage = readApiErrorMessage(
+        errorPayload,
+        'Failed to delete question',
+      )
 
-      const message =
-        data && 'error' in data && typeof data.error === 'string'
-          ? data.error
-          : 'Failed to delete question'
-
-      throw new Error(message)
+      throw new Error(errorMessage)
     }
 
-    const deletedQuestion = loaded?.question ?? 'Question'
+    const deletedQuestionTitle = questionToDelete?.question ?? 'Question'
 
-    removeQuestion(id)
+    removeQuestion(questionId)
 
-    await clearReadQuestionIfId(id)
+    await clearReadQuestionIfId(questionId)
 
     deleteQuestionId.set(null)
 
-    deleteQuestionData.set(null)
+    questionPendingDeletion.set(null)
 
-    toast.success(`“${deletedQuestion}” deleted`, {
+    toast.success(`“${deletedQuestionTitle}” deleted`, {
       classNames: {
         title: 'line-clamp-2 min-w-0 break-all whitespace-normal',
       },
     })
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to delete question'
+    const errorMessage = readUnknownErrorMessage(
+      error,
+      'Failed to delete question',
+    )
 
-    toast.error(message)
+    toast.error(errorMessage)
 
-    throw error instanceof Error ? error : new Error(message)
+    throw error instanceof Error ? error : new Error(errorMessage)
   }
 }, 'deleteQuestion').extend(withAsync())
 
@@ -145,13 +150,15 @@ effect(async () => {
   try {
     await wrap(loadDeleteQuestion())
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to load question'
+    const errorMessage = readUnknownErrorMessage(
+      error,
+      'Failed to load question',
+    )
 
-    toast.error(message)
+    toast.error(errorMessage)
 
     deleteQuestionId.set(null)
 
-    deleteQuestionData.set(null)
+    questionPendingDeletion.set(null)
   }
 }, 'loadDeleteQuestionOnOpen')

@@ -12,9 +12,9 @@ import type { HomeLoaderData } from '@/common/routes'
 import { homeRoute } from '@/common/routes'
 
 import {
+  isHomeLoaderDataAlreadyHydrated,
   questions,
   type Question,
-  wasHomeLoaderDataHydrated,
 } from '../../../model/questions'
 
 export const readQuestion = atom<Question | null>(null, 'readQuestion')
@@ -54,12 +54,12 @@ export const showCreatedReadQuestion = action((question: Question) => {
 }, 'showCreatedReadQuestion')
 
 /**
- * Apply home loader payload into the read atom (call from component render).
+ * Apply home loader payload into the read atom (from the home page model).
  * Skips when this loader payload was already applied so "Next" is not reset.
  */
 export const hydrateReadQuestionFromHomeLoader = action(
-  (data: HomeLoaderData) => {
-    if (wasHomeLoaderDataHydrated(data)) {
+  (homeLoaderPayload: HomeLoaderData) => {
+    if (isHomeLoaderDataAlreadyHydrated(homeLoaderPayload)) {
       return
     }
 
@@ -67,18 +67,18 @@ export const hydrateReadQuestionFromHomeLoader = action(
       return
     }
 
-    readQuestion.set(data.randomQuestion)
+    readQuestion.set(homeLoaderPayload.randomQuestion)
 
     readAnswerVisible.setFalse()
   },
   'hydrateReadQuestionFromHomeLoader',
 )
 
-export const fetchRandomQuestion = action(async (excludeId?: string) => {
-  const response = excludeId
+export const fetchRandomQuestion = action(async (excludeQuestionId?: string) => {
+  const response = excludeQuestionId
     ? await api.questions.random.$get({
         query: {
-          exclude: excludeId,
+          exclude: excludeQuestionId,
         },
       })
     : await api.questions.random.$get()
@@ -95,8 +95,8 @@ export const fetchRandomQuestion = action(async (excludeId?: string) => {
     throw new Error('Failed to load question')
   }
 
-  const data = await response.json()
-  const question = data.question as Question
+  const responsePayload = await response.json()
+  const question = responsePayload.question as Question
 
   readQuestion.set(question)
 
@@ -105,10 +105,10 @@ export const fetchRandomQuestion = action(async (excludeId?: string) => {
   return question
 }, 'fetchRandomQuestion').extend(withAsync())
 
-export const fetchQuestionById = action(async (id: string) => {
+export const fetchQuestionById = action(async (questionId: string) => {
   const response = await api.questions[':id'].$get({
     param: {
-      id,
+      id: questionId,
     },
   })
 
@@ -124,8 +124,8 @@ export const fetchQuestionById = action(async (id: string) => {
     throw new Error('Failed to load question')
   }
 
-  const data = await response.json()
-  const question = data.question as Question
+  const responsePayload = await response.json()
+  const question = responsePayload.question as Question
 
   readQuestion.set(question)
 
@@ -135,25 +135,25 @@ export const fetchQuestionById = action(async (id: string) => {
 }, 'fetchQuestionById').extend(withAsync())
 
 export const pickReadQuestion = action(async () => {
-  const excludeId = readQuestion()?.id
+  const excludeQuestionId = readQuestion()?.id
 
-  await fetchRandomQuestion(excludeId)
+  await fetchRandomQuestion(excludeQuestionId)
 }, 'pickReadQuestion')
 
-export const openReadQuestion = action(async (id: string) => {
+export const openReadQuestion = action(async (questionId: string) => {
   isOpeningReadQuestion.set(true)
 
   try {
     homeRoute.go()
 
-    await fetchQuestionById(id)
+    await fetchQuestionById(questionId)
   } finally {
     isOpeningReadQuestion.set(false)
   }
 }, 'openReadQuestion')
 
-export const clearReadQuestionIfId = action(async (id: string) => {
-  if (readQuestion()?.id !== id) {
+export const clearReadQuestionIfId = action(async (questionId: string) => {
+  if (readQuestion()?.id !== questionId) {
     return
   }
 
@@ -184,26 +184,26 @@ effect(() => {
     return
   }
 
-  onEvent(window, 'keydown', (event) => {
-    if (event.key !== 'Enter' || event.repeat) {
+  onEvent(window, 'keydown', (keyboardEvent) => {
+    if (keyboardEvent.key !== 'Enter' || keyboardEvent.repeat) {
       return
     }
 
     // Let the focused button handle Enter via its own click.
-    if (event.target instanceof HTMLButtonElement) {
+    if (keyboardEvent.target instanceof HTMLButtonElement) {
       return
     }
 
     if (
-      event.target instanceof HTMLElement &&
-      (event.target.tagName === 'INPUT' ||
-        event.target.tagName === 'TEXTAREA' ||
-        event.target.isContentEditable)
+      keyboardEvent.target instanceof HTMLElement &&
+      (keyboardEvent.target.tagName === 'INPUT' ||
+        keyboardEvent.target.tagName === 'TEXTAREA' ||
+        keyboardEvent.target.isContentEditable)
     ) {
       return
     }
 
-    event.preventDefault()
+    keyboardEvent.preventDefault()
 
     if (!readAnswerVisible()) {
       showReadAnswer()

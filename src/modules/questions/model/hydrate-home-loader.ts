@@ -7,11 +7,11 @@ import { hydrateReadQuestionFromHomeLoader } from '../modules/read/model/read-qu
 
 /**
  * Apply home route loader payload into questions + read atoms.
- * Call from the home page during render after `homeRoute.loader.data()` is available.
+ * Called from the home page model when loader payload is available.
  */
-export const hydrateHomeLoaderData = action((data: HomeLoaderData) => {
-  // Read first: it uses wasHomeLoaderDataHydrated before questions marks the payload applied.
-  hydrateReadQuestionFromHomeLoader(data)
+export const hydrateHomeLoaderData = action((homeLoaderPayload: HomeLoaderData) => {
+  // Read first: it checks isHomeLoaderDataAlreadyHydrated before questions marks the payload applied.
+  hydrateReadQuestionFromHomeLoader(homeLoaderPayload)
 
-  hydrateQuestionsFromHomeLoader(data)
+  hydrateQuestionsFromHomeLoader(homeLoaderPayload)
 }, 'hydrateHomeLoaderData')

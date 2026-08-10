@@ -19,13 +19,13 @@ type MarkdownAnswerFieldProps = {
 
 export const MarkdownAnswerField = reatomComponent(
   ({ field, label, name, className }: MarkdownAnswerFieldProps) => {
-    const bound = bindField(field)
-    const hasError = Boolean(bound.error)
-    const value = bound.value ?? ''
+    const fieldBinding = bindField(field)
+    const hasValidationError = Boolean(fieldBinding.error)
+    const answerMarkdown = fieldBinding.value ?? ''
 
     return (
       <Field
-        data-invalid={hasError || undefined}
+        data-invalid={hasValidationError || undefined}
         className={cn('min-h-0', className)}
       >
         <FieldLabel className="shrink-0" htmlFor={name}>
@@ -36,16 +36,16 @@ export const MarkdownAnswerField = reatomComponent(
             id={name}
             name={name}
             className="min-h-40 flex-1 resize-none md:min-h-0 [field-sizing:fixed]"
-            aria-invalid={hasError || undefined}
+            aria-invalid={hasValidationError || undefined}
             placeholder="Write answer in Markdown…"
-            value={value}
-            onChange={bound.onChange}
-            onBlur={bound.onBlur}
-            onFocus={bound.onFocus}
+            value={answerMarkdown}
+            onChange={fieldBinding.onChange}
+            onBlur={fieldBinding.onBlur}
+            onFocus={fieldBinding.onFocus}
           />
           <div className="min-h-40 overflow-y-auto rounded-lg border border-border bg-muted/20 p-3 md:min-h-0">
-            {value.trim() ? (
-              <MarkdownContent>{value}</MarkdownContent>
+            {answerMarkdown.trim() ? (
+              <MarkdownContent>{answerMarkdown}</MarkdownContent>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Markdown preview
@@ -53,7 +53,7 @@ export const MarkdownAnswerField = reatomComponent(
             )}
           </div>
         </div>
-        <FieldError>{bound.error}</FieldError>
+        <FieldError>{fieldBinding.error}</FieldError>
       </Field>
     )
   },

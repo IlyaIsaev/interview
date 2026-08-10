@@ -15,45 +15,45 @@ const QUESTION_ROW_GAP_PX = 8;
 
 type QuestionsVirtualListProps = {
   questions: Question[];
-  onSelect: (questionId: string) => void;
-  onItemKeyDown: (event: KeyboardEvent, questionId: string) => void;
+  onQuestionSelect: (questionId: string) => void;
+  onQuestionKeyDown: (event: KeyboardEvent, questionId: string) => void;
 };
 
 export function QuestionsVirtualList({
   questions,
-  onSelect,
-  onItemKeyDown,
+  onQuestionSelect,
+  onQuestionKeyDown,
 }: QuestionsVirtualListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
+  const scrollParentRef = useRef<HTMLDivElement>(null);
 
-  const virtualizer = useVirtualizer({
+  const questionRowVirtualizer = useVirtualizer({
     count: questions.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => scrollParentRef.current,
     estimateSize: () => QUESTION_ROW_ESTIMATE_PX,
     gap: QUESTION_ROW_GAP_PX,
     overscan: 8,
   });
 
   return (
-    <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto">
+    <div ref={scrollParentRef} className="min-h-0 flex-1 overflow-y-auto">
       <div
         role="list"
         className="relative w-full"
-        style={{ height: virtualizer.getTotalSize() }}
+        style={{ height: questionRowVirtualizer.getTotalSize() }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          const item = questions[virtualRow.index];
+        {questionRowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const question = questions[virtualRow.index];
 
-          if (!item) {
+          if (!question) {
             return null;
           }
 
           return (
             <div
-              key={item.id}
+              key={question.id}
               role="listitem"
               data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
+              ref={questionRowVirtualizer.measureElement}
               className="absolute top-0 left-0 w-full"
               style={{
                 transform: `translateY(${virtualRow.start}px)`,
@@ -65,20 +65,20 @@ export function QuestionsVirtualList({
                 size="sm"
                 className="w-full cursor-pointer flex-nowrap"
                 onClick={wrap(() => {
-                  onSelect(item.id);
+                  onQuestionSelect(question.id);
                 })}
-                onKeyDown={wrap((event: KeyboardEvent) => {
-                  onItemKeyDown(event, item.id);
+                onKeyDown={wrap((keyboardEvent: KeyboardEvent) => {
+                  onQuestionKeyDown(keyboardEvent, question.id);
                 })}
               >
                 <ItemContent className="w-2/3 overflow-hidden">
                   <ItemTitle className="w-full overflow-hidden">
-                    <span className="truncate">{item.question}</span>
+                    <span className="truncate">{question.question}</span>
                   </ItemTitle>
                 </ItemContent>
                 <ItemActions className="opacity-0 transition-opacity group-hover/item:opacity-100 group-focus-within/item:opacity-100">
-                  <UpdateQuestionButton questionId={item.id} />
-                  <DeleteQuestionButton questionId={item.id} />
+                  <UpdateQuestionButton questionId={question.id} />
+                  <DeleteQuestionButton questionId={question.id} />
                 </ItemActions>
               </Item>
             </div>

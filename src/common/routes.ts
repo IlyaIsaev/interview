@@ -22,41 +22,42 @@ export type HomeRouteParams = {
   mode: 'demo' | 'personal'
 }
 
-const loadHomeData = async (): Promise<HomeLoaderData> => {
+const buildEmptyHomeLoaderData = (
+  questions: HomeQuestion[],
+): HomeLoaderData => ({
+  questions,
+  randomQuestion: null,
+})
+
+const loadHomeQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
   const listResponse = await api.questions.$get()
 
   if (!listResponse.ok) {
     throw new Error('Failed to load questions')
   }
 
-  const listData = await listResponse.json()
-  const questions = listData.questions as HomeQuestion[]
+  const listPayload = await listResponse.json()
+  const questions = listPayload.questions as HomeQuestion[]
 
   if (questions.length === 0) {
-    return {
-      questions,
-      randomQuestion: null,
-    }
+    return buildEmptyHomeLoaderData(questions)
   }
 
   const randomResponse = await api.questions.random.$get()
 
   if (!randomResponse.ok) {
     if (randomResponse.status === 404) {
-      return {
-        questions,
-        randomQuestion: null,
-      }
+      return buildEmptyHomeLoaderData(questions)
     }
 
     throw new Error('Failed to load question')
   }
 
-  const randomData = await randomResponse.json()
+  const randomPayload = await randomResponse.json()
 
   return {
     questions,
-    randomQuestion: randomData.question as HomeQuestion,
+    randomQuestion: randomPayload.question as HomeQuestion,
   }
 }
 
@@ -78,7 +79,7 @@ export const homeRoute = reatomRoute(
         mode: isLoggedIn() ? 'personal' : 'demo',
       }
     },
-    loader: loadHomeData,
+    loader: loadHomeQuestionsAndRandom,
   },
   'homeRoute',
 )

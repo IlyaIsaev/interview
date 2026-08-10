@@ -18,26 +18,29 @@ export const isQuestionsLoaded = atom(false, 'isQuestionsLoaded')
 export const questionsError = atom<Error | undefined>(undefined, 'questionsError')
 
 /** Last home loader payload applied — identity check avoids re-render loops. */
-let lastHydratedHomeData: HomeLoaderData | null = null
+let lastHydratedHomeLoaderPayload: HomeLoaderData | null = null
 
-export const wasHomeLoaderDataHydrated = (data: HomeLoaderData) =>
-  lastHydratedHomeData === data
+export const isHomeLoaderDataAlreadyHydrated = (homeLoaderPayload: HomeLoaderData) =>
+  lastHydratedHomeLoaderPayload === homeLoaderPayload
 
-/** Apply home route loader payload into questions atoms (call from component render). */
-export const hydrateQuestionsFromHomeLoader = action((data: HomeLoaderData) => {
-  if (lastHydratedHomeData === data) {
-    return
-  }
+/** Apply home route loader payload into questions atoms (from the home page model). */
+export const hydrateQuestionsFromHomeLoader = action(
+  (homeLoaderPayload: HomeLoaderData) => {
+    if (lastHydratedHomeLoaderPayload === homeLoaderPayload) {
+      return
+    }
 
-  questions.set(data.questions)
-  isQuestionsLoaded.set(true)
-  questionsError.set(undefined)
-  lastHydratedHomeData = data
-}, 'hydrateQuestionsFromHomeLoader')
+    questions.set(homeLoaderPayload.questions)
+    isQuestionsLoaded.set(true)
+    questionsError.set(undefined)
+    lastHydratedHomeLoaderPayload = homeLoaderPayload
+  },
+  'hydrateQuestionsFromHomeLoader',
+)
 
 /** Clear hydration cache when the home route unmatches (e.g. auth mode switch). */
 export const resetQuestionsHydration = action(() => {
-  lastHydratedHomeData = null
+  lastHydratedHomeLoaderPayload = null
   isQuestionsLoaded.set(false)
 }, 'resetQuestionsHydration')
 
@@ -48,12 +51,14 @@ export const prependQuestion = action((question: Question) => {
 
 export const replaceQuestion = action((question: Question) => {
   questions.set(
-    questions().map((item) => (item.id === question.id ? question : item)),
+    questions().map((existingQuestion) =>
+      existingQuestion.id === question.id ? question : existingQuestion,
+    ),
   )
 }, 'replaceQuestion')
 
-export const removeQuestion = action((id: string) => {
-  questions.set(questions().filter((item) => item.id !== id))
+export const removeQuestion = action((questionId: string) => {
+  questions.set(questions().filter((question) => question.id !== questionId))
 }, 'removeQuestion')
 
 /** Whether the current auth mode may create another question. */

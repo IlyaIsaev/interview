@@ -15,49 +15,51 @@ import { Spinner } from '@/common/components/ui/spinner'
 import {
   closeDeleteQuestionDialog,
   deleteQuestion,
-  deleteQuestionData,
   deleteQuestionId,
   loadDeleteQuestion,
+  questionPendingDeletion,
   setDeleteQuestionDialogOpen,
   submitDeleteQuestion,
 } from '../model/delete-question'
 
 export const DeleteQuestionDialog = reatomComponent(() => {
-  const id = deleteQuestionId()
-  const loaded = deleteQuestionData()
-  const isLoading = loadDeleteQuestion.pending() > 0
-  const isDeleting = deleteQuestion.pending() > 0
-  const isBusy = isLoading || isDeleting
+  const questionId = deleteQuestionId()
+  const questionToDelete = questionPendingDeletion()
+  const isLoadingQuestion = loadDeleteQuestion.pending() > 0
+  const isDeletingQuestion = deleteQuestion.pending() > 0
+  const isDialogBusy = isLoadingQuestion || isDeletingQuestion
 
-  const handleOpenChange = wrap((open: boolean) => {
-    setDeleteQuestionDialogOpen(open, isBusy)
+  const handleDialogOpenChange = wrap((isOpen: boolean) => {
+    setDeleteQuestionDialogOpen(isOpen, isDialogBusy)
   })
 
-  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    void submitDeleteQuestion()
-  })
+  const handleDeleteFormSubmit = wrap(
+    (formEvent: React.FormEvent<HTMLFormElement>) => {
+      formEvent.preventDefault()
+      void submitDeleteQuestion()
+    },
+  )
 
   return (
-    <Dialog open={id !== null} onOpenChange={handleOpenChange}>
-      <DialogContent showCloseButton={!isBusy} className="min-w-0 overflow-hidden">
-        {isLoading || !loaded ? (
+    <Dialog open={questionId !== null} onOpenChange={handleDialogOpenChange}>
+      <DialogContent showCloseButton={!isDialogBusy} className="min-w-0 overflow-hidden">
+        {isLoadingQuestion || !questionToDelete ? (
           <div className="flex items-center justify-center py-8">
             <Spinner className="size-5" />
           </div>
         ) : (
-          <form className="contents" onSubmit={handleSubmit}>
+          <form className="contents" onSubmit={handleDeleteFormSubmit}>
             <DialogHeader className="min-w-0">
               <DialogTitle>Delete question</DialogTitle>
               <DialogDescription className="min-w-0 break-all">
-                {`Delete “${loaded.question}”? This cannot be undone.`}
+                {`Delete “${questionToDelete.question}”? This cannot be undone.`}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                disabled={isDeleting}
+                disabled={isDeletingQuestion}
                 onClick={wrap(closeDeleteQuestionDialog)}
               >
                 Cancel
@@ -65,10 +67,10 @@ export const DeleteQuestionDialog = reatomComponent(() => {
               <Button
                 type="submit"
                 variant="destructive"
-                disabled={isDeleting}
+                disabled={isDeletingQuestion}
                 autoFocus
               >
-                {isDeleting ? 'Deleting…' : 'Delete'}
+                {isDeletingQuestion ? 'Deleting…' : 'Delete'}
               </Button>
             </DialogFooter>
           </form>

@@ -10,11 +10,11 @@ export const HomePage = reatomComponent(() => {
     return null
   }
 
-  const data = homeRoute.loader.data()
-  const ready = homeRoute.loader.ready()
-  const error = homeRoute.loader.error()
+  const homeLoaderPayload = homeRoute.loader.data()
+  const isHomeLoaderReady = homeRoute.loader.ready()
+  const homeLoaderError = homeRoute.loader.error()
 
-  if (!ready) {
+  if (!isHomeLoaderReady) {
     return (
       <div className="flex w-full justify-center">
         <Spinner className="size-5" />
@@ -22,15 +22,15 @@ export const HomePage = reatomComponent(() => {
     )
   }
 
-  if (error && !data) {
+  if (homeLoaderError && !homeLoaderPayload) {
     return (
       <p className="w-full text-center text-sm text-destructive">
-        {error.message || 'Failed to load questions'}
+        {homeLoaderError.message || 'Failed to load questions'}
       </p>
     )
   }
 
-  if (!data) {
+  if (!homeLoaderPayload) {
     return (
       <div className="flex w-full justify-center">
         <Spinner className="size-5" />

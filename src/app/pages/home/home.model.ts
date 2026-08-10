@@ -4,7 +4,7 @@ import { homeRoute } from '@/common/routes'
 import { hydrateHomeLoaderData } from '@/modules/questions'
 
 /**
- * When the home route is active and its loader has data, hydrate domain atoms.
+ * When the home route is active and its loader has payload, hydrate domain atoms.
  * Kept out of the view so render stays declarative.
  */
 effect(() => {
@@ -12,11 +12,11 @@ effect(() => {
     return
   }
 
-  const data = homeRoute.loader.data()
+  const homeLoaderPayload = homeRoute.loader.data()
 
-  if (!data) {
+  if (!homeLoaderPayload) {
     return
   }
 
-  hydrateHomeLoaderData(data)
+  hydrateHomeLoaderData(homeLoaderPayload)
 }, 'homePageHydrateLoader')
