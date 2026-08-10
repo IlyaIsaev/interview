@@ -46,7 +46,7 @@ Registration of new users is temporarily suspended.
 | Package manager       | pnpm                                    |
 | Deploy / local Worker | Wrangler                                |
 | Lint                  | Oxlint                                  |
-| Format                | Prettier                                |
+| Format                | Oxfmt                                   |
 | Git hooks             | Lefthook                                |
 | Types                 | TypeScript, `@cloudflare/workers-types` |
 | Cloudflare Vite       | `@cloudflare/vite-plugin`               |
@@ -58,7 +58,7 @@ pnpm dev                 # Vite dev server
 pnpm build               # Typecheck + production build
 pnpm deploy              # Build and deploy Worker + assets
 pnpm lint                # Oxlint
-pnpm format              # Format with Prettier
+pnpm format              # Format with Oxfmt
 pnpm format:check        # Check formatting without writing
 pnpm db:migrate:local    # Apply D1 migrations locally
 pnpm db:migrate:remote   # Apply D1 migrations remotely
@@ -70,4 +70,4 @@ pnpm db:studio           # Drizzle Studio
 
 The project uses [Lefthook](https://lefthook.dev/) for Git hooks. On `pnpm install`, `prepare` runs `lefthook install`.
 
-On every commit, Lefthook formats staged files with Prettier (`lefthook.yml` → `pre-commit` → `prettier --write`) and re-stages the fixes (`stage_fixed: true`).
+On every commit, Lefthook formats staged files with Oxfmt (`lefthook.yml` → `pre-commit` → `oxfmt`) and re-stages the fixes (`stage_fixed: true`).
