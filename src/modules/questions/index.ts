@@ -51,7 +51,14 @@ export {
   showReadAnswer,
 } from './modules/read'
 
-export { fetchQuestions } from './model/questions'
+export {
+  canCreateQuestion,
+  DEMO_QUESTIONS_LIMIT,
+  demoQuestionsLimitMessage,
+  fetchQuestions,
+  isQuestionsLoaded,
+  loadQuestions,
+} from './model/questions'
 
 export type { Question } from './model/questions'
 

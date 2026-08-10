@@ -1,10 +1,13 @@
-import { desc, eq, ne, sql } from 'drizzle-orm'
+import { count, desc, eq, ne, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 
 import { createDb, demoQuestions, questions } from '@/db'
 
 import type { AuthEnv, AuthVariables } from './auth'
+
+/** Max questions allowed in the shared demo bank (logged-out mode). */
+export const DEMO_QUESTIONS_LIMIT = 10
 
 type QuestionBody = {
   question: string
@@ -59,6 +62,23 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     const table = getQuestionsTable(user)
     const { question, answer } = c.req.valid('json')
     const db = createDb(c.env.interview)
+
+    // Demo bank is shared and unbounded otherwise — cap create for logged-out users.
+    if (!user) {
+      const [result] = await db
+        .select({ value: count() })
+        .from(demoQuestions)
+
+      if ((result?.value ?? 0) >= DEMO_QUESTIONS_LIMIT) {
+        return c.json(
+          {
+            error: `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`,
+          },
+          403,
+        )
+      }
+    }
+
     const id = crypto.randomUUID()
 
     const [created] = await db

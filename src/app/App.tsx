@@ -7,7 +7,11 @@ import { Spinner } from "@/common/components/ui/spinner";
 import { TooltipProvider } from "@/common/components/ui/tooltip";
 import { homeRoute, signInRoute, signUpRoute } from "@/common/routes";
 import { isLoggedIn, signOut } from "@/modules/auth";
-import { CreateQuestionButton, CreateQuestionDialog, QuestionsDrawer } from "@/modules/questions";
+import {
+  CreateQuestionButton,
+  CreateQuestionDialog,
+  QuestionsDrawer,
+} from "@/modules/questions";
 
 const HomePage = lazy(() => import("./pages/home"));
 
@@ -48,7 +52,11 @@ const App = reatomComponent(() => {
             </div>
             <CreateQuestionDialog />
             <nav className="mx-auto flex h-full w-full max-w-7xl items-center gap-3 px-4">
-              <button type="button" className="text-sm font-medium" onClick={wrap(homeRoute.go)}>
+              <button
+                type="button"
+                className="text-sm font-medium"
+                onClick={wrap(homeRoute.go)}
+              >
                 Interview
               </button>
               <div className="ml-auto flex items-center gap-3">

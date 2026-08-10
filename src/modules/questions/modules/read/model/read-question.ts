@@ -12,7 +12,11 @@ import { api } from '@/common/api'
 import { homeRoute } from '@/common/routes'
 import { isLoggedIn, isSessionPending } from '@/modules/auth'
 
-import type { Question } from '../../../model/questions'
+import {
+  fetchQuestions,
+  isQuestionsLoaded,
+  type Question,
+} from '../../../model/questions'
 
 export const readQuestion = atom<Question | null>(null, 'readQuestion')
 
@@ -139,11 +143,27 @@ export const ensureReadQuestionLoaded = action(async () => {
     return
   }
 
+  // Wait for the site-level list load; do not start another GET /questions.
+  if (!isQuestionsLoaded()) {
+    return
+  }
+
   if (readQuestion()) {
     return
   }
 
   if (fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0) {
+    return
+  }
+
+  const questions = fetchQuestions.data()
+
+  // Empty bank: skip /random (would only 404) and show the empty state.
+  if (questions.length === 0) {
+    readQuestion.set(null)
+
+    readAnswerVisible.setFalse()
+
     return
   }
 
@@ -170,7 +190,7 @@ export const clearReadQuestionIfId = action(async (id: string) => {
   }
 }, 'clearReadQuestionIfId')
 
-// Load a random question when the home route is open (demo or personal bank).
+// Load a random question when home is open and the questions list has settled.
 effect(async () => {
   if (isSessionPending()) {
     return
@@ -188,6 +208,11 @@ effect(async () => {
   lastReadAuthLoggedIn.set(loggedIn)
 
   if (!homeRoute.exact()) {
+    return
+  }
+
+  // Re-runs when isQuestionsLoaded flips true after the site-level list fetch.
+  if (!isQuestionsLoaded()) {
     return
   }
 

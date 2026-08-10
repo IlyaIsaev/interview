@@ -1,7 +1,6 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { PlusIcon } from 'lucide-react'
-import { useEffect } from 'react'
 
 import { MarkdownContent } from '@/common/components/markdown'
 import { Button } from '@/common/components/ui/button'
@@ -15,9 +14,9 @@ import { Separator } from '@/common/components/ui/separator'
 import { Spinner } from '@/common/components/ui/spinner'
 import { isSessionPending } from '@/modules/auth'
 
+import { isQuestionsLoaded } from '../../../model/questions'
 import { openCreateQuestionDialog } from '../../create'
 import {
-  ensureReadQuestionLoaded,
   fetchQuestionById,
   fetchRandomQuestion,
   pickReadQuestion,
@@ -29,14 +28,6 @@ import {
 export const ReadQuestion = reatomComponent(() => {
   const sessionPending = isSessionPending()
 
-  useEffect(() => {
-    if (sessionPending) {
-      return
-    }
-
-    void ensureReadQuestionLoaded()
-  }, [sessionPending])
-
   if (sessionPending) {
     return (
       <div className="flex w-full justify-center">
@@ -47,7 +38,9 @@ export const ReadQuestion = reatomComponent(() => {
 
   const question = readQuestion()
   const isLoading =
-    fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0
+    fetchRandomQuestion.pending() > 0 ||
+    fetchQuestionById.pending() > 0 ||
+    (!question && !isQuestionsLoaded())
   const answerVisible = readAnswerVisible()
 
   if (isLoading && !question) {

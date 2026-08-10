@@ -1,4 +1,4 @@
-import { action, effect, reatomBoolean, wrap } from "@reatom/core";
+import { action, reatomBoolean, wrap } from "@reatom/core";
 import { reatomComponent } from "@reatom/react";
 import { PanelLeftIcon, PlusIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
@@ -6,16 +6,20 @@ import type { KeyboardEvent } from "react";
 import { Button } from "@/common/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/common/components/ui/drawer";
 import { Empty, EmptyContent, EmptyHeader, EmptyTitle } from "@/common/components/ui/empty";
-import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/common/components/ui/item";
 import { Spinner } from "@/common/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/common/components/ui/tooltip";
 import { isSessionPending } from "@/modules/auth";
 
 import { CreateQuestionButton, openCreateQuestionDialog } from "../modules/create";
-import { DeleteQuestionButton, DeleteQuestionDialog } from "../modules/delete";
+import { DeleteQuestionDialog } from "../modules/delete";
 import { openReadQuestion } from "../modules/read";
-import { UpdateQuestionButton, UpdateQuestionDialog } from "../modules/update";
-import { fetchQuestions } from "../model/questions";
+import { UpdateQuestionDialog } from "../modules/update";
+import {
+  canCreateQuestion,
+  fetchQuestions,
+  isQuestionsLoaded,
+} from "../model/questions";
+import { QuestionsVirtualList } from "./questions-virtual-list";
 
 const questionsDrawerOpen = reatomBoolean(false, "questionsDrawerOpen");
 
@@ -43,18 +47,13 @@ const handleQuestionItemKeyDown = action((event: KeyboardEvent, questionId: stri
   selectQuestionFromDrawer(questionId);
 }, "handleQuestionItemKeyDown");
 
-effect(async () => {
-  if (!questionsDrawerOpen()) {
-    return;
-  }
-
-  await wrap(fetchQuestions());
-}, "loadQuestionsWhenDrawerOpen");
-
 export const QuestionsDrawer = reatomComponent(() => {
   const questions = fetchQuestions.data();
-  const isPending = !fetchQuestions.ready() || isSessionPending();
+  const isPending =
+    isSessionPending() ||
+    (!isQuestionsLoaded() && fetchQuestions.pending() > 0);
   const error = fetchQuestions.error();
+  const allowedToCreate = canCreateQuestion();
 
   if (isSessionPending()) {
     return null;
@@ -91,9 +90,9 @@ export const QuestionsDrawer = reatomComponent(() => {
             <CreateQuestionButton />
           </div>
         </DrawerHeader>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 pt-3">
+        <div className="flex min-h-0 flex-1 flex-col p-4 pt-3">
           {isPending && questions.length === 0 ? (
-            <div className="flex justify-center py-6">
+            <div className="flex min-h-0 flex-1 items-center justify-center">
               <Spinner className="size-5" />
             </div>
           ) : null}
@@ -110,7 +109,11 @@ export const QuestionsDrawer = reatomComponent(() => {
                 <EmptyTitle>No questions yet</EmptyTitle>
               </EmptyHeader>
               <EmptyContent>
-                <Button type="button" onClick={wrap(openCreateQuestionDialog)}>
+                <Button
+                  type="button"
+                  disabled={!allowedToCreate}
+                  onClick={wrap(openCreateQuestionDialog)}
+                >
                   <PlusIcon data-icon="inline-start" />
                   Add question
                 </Button>
@@ -119,34 +122,11 @@ export const QuestionsDrawer = reatomComponent(() => {
           ) : null}
 
           {questions.length > 0 ? (
-            <ItemGroup className="gap-2">
-              {questions.map((item) => (
-                <Item
-                  key={item.id}
-                  role="listitem"
-                  tabIndex={0}
-                  variant="outline"
-                  size="sm"
-                  className="cursor-pointer flex-nowrap"
-                  onClick={wrap(() => {
-                    selectQuestionFromDrawer(item.id);
-                  })}
-                  onKeyDown={wrap((event: KeyboardEvent) => {
-                    handleQuestionItemKeyDown(event, item.id);
-                  })}
-                >
-                  <ItemContent className="w-2/3 overflow-hidden">
-                    <ItemTitle className="w-full overflow-hidden">
-                      <span className="truncate">{item.question}</span>
-                    </ItemTitle>
-                  </ItemContent>
-                  <ItemActions className="opacity-0 transition-opacity group-hover/item:opacity-100 group-focus-within/item:opacity-100">
-                    <UpdateQuestionButton questionId={item.id} />
-                    <DeleteQuestionButton questionId={item.id} />
-                  </ItemActions>
-                </Item>
-              ))}
-            </ItemGroup>
+            <QuestionsVirtualList
+              questions={questions}
+              onSelect={selectQuestionFromDrawer}
+              onItemKeyDown={handleQuestionItemKeyDown}
+            />
           ) : null}
         </div>
         <UpdateQuestionDialog />

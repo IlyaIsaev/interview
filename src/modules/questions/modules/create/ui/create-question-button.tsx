@@ -9,25 +9,31 @@ import {
   TooltipTrigger,
 } from '@/common/components/ui/tooltip'
 
+import {
+  canCreateQuestion,
+  demoQuestionsLimitMessage,
+} from '../../../model/questions'
 import { openCreateQuestionDialog } from '../model/dialog-open'
 
 export const CreateQuestionButton = reatomComponent(() => {
+  const allowed = canCreateQuestion()
+  const label = allowed ? 'Add a new question' : demoQuestionsLimitMessage
+
   return (
     <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Add a new question"
-            onClick={wrap(openCreateQuestionDialog)}
-          />
-        }
-      >
-        <PlusIcon />
+      <TooltipTrigger render={<span className="inline-flex" />}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={label}
+          disabled={!allowed}
+          onClick={wrap(openCreateQuestionDialog)}
+        >
+          <PlusIcon />
+        </Button>
       </TooltipTrigger>
-      <TooltipContent side="bottom">Add a new question</TooltipContent>
+      <TooltipContent side="bottom">{label}</TooltipContent>
     </Tooltip>
   )
 }, 'CreateQuestionButton')
