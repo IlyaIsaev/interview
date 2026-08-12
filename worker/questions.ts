@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ne, sql } from 'drizzle-orm'
+import { and, count, desc, eq, like, ne, or, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 
@@ -26,6 +26,29 @@ type QuestionsEnv = {
 
 const isNonEmptyString = (candidate: unknown): candidate is string =>
   typeof candidate === 'string' && candidate.trim().length > 0
+
+/** Escape `%` and `_` so user input is treated as a literal LIKE substring. */
+const escapeSqlLikePattern = (rawPattern: string): string =>
+  rawPattern
+    .replaceAll('\\', '\\\\')
+    .replaceAll('%', '\\%')
+    .replaceAll('_', '\\_')
+
+const buildQuestionSearchLikePattern = (
+  searchQuery: string | undefined,
+): string | null => {
+  if (!searchQuery) {
+    return null
+  }
+
+  const trimmedSearchQuery = searchQuery.trim()
+
+  if (!trimmedSearchQuery) {
+    return null
+  }
+
+  return `%${escapeSqlLikePattern(trimmedSearchQuery)}%`
+}
 
 const questionBodyValidator = validator('json', (requestBody, c) => {
   if (!requestBody || typeof requestBody !== 'object') {
@@ -89,11 +112,22 @@ export const app = new Hono<QuestionsEnv>()
   .get('/api/questions', async (c) => {
     const user = c.get('user')
     const db = createDb(c.env.interview)
+    const searchLikePattern = buildQuestionSearchLikePattern(
+      c.req.query('search'),
+    )
 
     if (user) {
       const questionRows = await db
         .select()
         .from(questions)
+        .where(
+          searchLikePattern
+            ? or(
+                like(questions.question, searchLikePattern),
+                like(questions.answer, searchLikePattern),
+              )
+            : undefined,
+        )
         .orderBy(desc(questions.createdAt))
 
       return c.json({ questions: questionRows }, 200)
@@ -104,7 +138,17 @@ export const app = new Hono<QuestionsEnv>()
     const questionRows = await db
       .select()
       .from(demoQuestions)
-      .where(eq(demoQuestions.demoProfileId, demoProfile.id))
+      .where(
+        and(
+          eq(demoQuestions.demoProfileId, demoProfile.id),
+          searchLikePattern
+            ? or(
+                like(demoQuestions.question, searchLikePattern),
+                like(demoQuestions.answer, searchLikePattern),
+              )
+            : undefined,
+        ),
+      )
       .orderBy(desc(demoQuestions.createdAt))
 
     return c.json({ questions: questionRows.map(toPublicQuestion) }, 200)

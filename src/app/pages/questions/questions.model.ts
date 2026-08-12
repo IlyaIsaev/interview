@@ -11,6 +11,7 @@ import {
   readAnswerVisible,
   readQuestion,
   resetQuestionsHydration,
+  resetQuestionsSearch,
   showQuestionFromBank,
   showReadAnswer,
 } from '@/modules/questions'
@@ -51,6 +52,7 @@ effect(() => {
 effect(() => {
   if (!isQuestionsShellActive()) {
     resetQuestionsHydration()
+    resetQuestionsSearch()
     clearReadQuestion()
 
     return

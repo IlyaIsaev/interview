@@ -58,6 +58,16 @@ export {
 
 export type { QuestionPathNavigationRequest } from './modules/read'
 
+export {
+  QuestionsSearchField,
+  questionsSearchError,
+  questionsSearchInput,
+  questionsSearchResults,
+  resetQuestionsSearch,
+  searchQuestions,
+  setQuestionsSearchInput,
+} from './modules/search'
+
 export { hydrateQuestionsSession } from './model/hydrate-questions'
 
 export {

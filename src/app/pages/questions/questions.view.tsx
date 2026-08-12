@@ -73,11 +73,6 @@ export const QuestionsPage = reatomComponent(() => {
   return (
     <SidebarProvider defaultOpen={false}>
       <QuestionsSidebar
-        questions={
-          questionBank.length > 0
-            ? questionBank
-            : (loaderPayload?.questions ?? [])
-        }
         isLoading={!isLoaderReady && questionBank.length === 0}
         error={loaderError}
         onQuestionSelect={wrap(navigateToQuestion)}
