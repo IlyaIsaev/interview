@@ -1,4 +1,4 @@
-import { action, effect, wrap } from '@reatom/core'
+import { action, effect, urlAtom, wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { lazy, Suspense } from 'react'
 
@@ -16,10 +16,19 @@ import {
 const HomePage = lazy(() => import('./pages/home'))
 
 const SignInPage = lazy(() => import('./pages/sign-in'))
+const TestPage = lazy(() => import('./pages/test'))
 
 function PageFallback() {
   return (
     <div className="flex w-full justify-center">
+      <Spinner className="size-6" />
+    </div>
+  )
+}
+
+function FullPageFallback() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center">
       <Spinner className="size-6" />
     </div>
   )
@@ -47,6 +56,17 @@ effect(() => {
 }, 'redirectSignUpToSignIn')
 
 const App = reatomComponent(() => {
+  if (urlAtom().pathname === '/test') {
+    return (
+      <TooltipProvider>
+        <Suspense fallback={<FullPageFallback />}>
+          <TestPage />
+        </Suspense>
+        <Toaster />
+      </TooltipProvider>
+    )
+  }
+
   const isAuthSessionPending = isSessionPending()
 
   return (

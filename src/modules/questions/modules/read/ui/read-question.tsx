@@ -13,6 +13,7 @@ import {
 
 import { Spinner } from '@/common/components/ui/spinner'
 
+import { questions } from '../../../model/questions'
 import { openCreateQuestionDialog } from '../../create'
 import {
   fetchQuestionById,
@@ -28,6 +29,7 @@ export const ReadQuestion = reatomComponent(() => {
   const isQuestionLoading =
     fetchRandomQuestion.pending() > 0 || fetchQuestionById.pending() > 0
   const isAnswerVisible = readAnswerVisible()
+  const hasNextQuestion = questions().length > 1
 
   if (isQuestionLoading && !currentQuestion) {
     return (
@@ -67,30 +69,33 @@ export const ReadQuestion = reatomComponent(() => {
         </MarkdownContent>
       ) : null}
 
-      <div className="mt-auto flex flex-wrap items-center justify-center gap-2">
-        {!isAnswerVisible ? (
-          <Button
-            type="button"
-            size="lg"
-            variant="outline"
-            autoFocus
-            onClick={wrap(showReadAnswer)}
-          >
-            Show answer
-          </Button>
-        ) : null}
+      {!isQuestionLoading && (!isAnswerVisible || hasNextQuestion) ? (
+        <div className="mt-auto flex flex-wrap items-center justify-center gap-2">
+          {!isAnswerVisible ? (
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              autoFocus
+              onClick={wrap(showReadAnswer)}
+            >
+              Show answer
+            </Button>
+          ) : null}
 
-        <Button
-          type="button"
-          size="lg"
-          variant="secondary"
-          disabled={isQuestionLoading}
-          autoFocus={isAnswerVisible}
-          onClick={wrap(pickReadQuestion)}
-        >
-          {isQuestionLoading ? 'Loading…' : 'Next question'}
-        </Button>
-      </div>
+          {hasNextQuestion ? (
+            <Button
+              type="button"
+              size="lg"
+              variant="secondary"
+              autoFocus={isAnswerVisible}
+              onClick={wrap(pickReadQuestion)}
+            >
+              Next question
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }, 'ReadQuestion')

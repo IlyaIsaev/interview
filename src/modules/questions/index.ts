@@ -47,6 +47,7 @@ export {
   pickReadQuestion,
   readAnswerVisible,
   readQuestion,
+  selectReadQuestion,
   showCreatedReadQuestion,
   showReadAnswer,
 } from './modules/read'
@@ -69,3 +70,4 @@ export {
 export type { Question } from './model/questions'
 
 export { QuestionsDrawer } from './ui/questions-drawer'
+export { QuestionsSidebar } from './ui/questions-sidebar'

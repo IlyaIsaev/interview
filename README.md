@@ -4,7 +4,7 @@
 
 Interview is an app for practicing interview questions. Users work with a question bank: open random prompts, reveal answers, and manage their own questions.
 
-**Demo user (guest):** no account required. Uses a shared demo question bank with a create limit of 30 questions. That bank can be cleared at any time. Signed-in users get a private bank instead.
+**Demo user (guest):** no account required. On first visit the app creates a personal demo profile (cookie-bound, 24h TTL) with its own question bank and a create limit of 30 questions. When the cookie/profile expires, the demo profile and its questions are removed. Signed-in users get a private bank instead.
 
 Registration of new users is temporarily suspended.
 

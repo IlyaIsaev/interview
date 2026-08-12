@@ -40,6 +40,7 @@ export const UpdateQuestionForm = reatomComponent(() => {
             name="question"
             placeholder="Write question in Markdown…"
             previewPlaceholder="Question preview"
+            textareaClassName="p-3"
           />
           <MarkdownAnswerField
             field={updateQuestionForm.fields.answer}

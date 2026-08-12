@@ -1,12 +1,13 @@
-import { count, desc, eq, ne, sql } from 'drizzle-orm'
+import { and, count, desc, eq, ne, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 
 import { createDb, demoQuestions, questions } from '@/db'
 
 import type { AuthEnv, AuthVariables } from './auth'
+import { resolveDemoProfile, type DemoProfile } from './demo-profile'
 
-/** Max questions allowed in the shared demo bank (logged-out mode). */
+/** Max questions allowed per demo profile (logged-out mode). */
 export const DEMO_QUESTIONS_LIMIT = 30
 
 type QuestionBody = {
@@ -14,11 +15,17 @@ type QuestionBody = {
   answer: string
 }
 
+type QuestionsVariables = AuthVariables & {
+  demoProfile: DemoProfile | null
+}
+
+type QuestionsEnv = {
+  Bindings: AuthEnv
+  Variables: QuestionsVariables
+}
+
 const isNonEmptyString = (candidate: unknown): candidate is string =>
   typeof candidate === 'string' && candidate.trim().length > 0
-
-const getQuestionsTableForUser = (user: AuthVariables['user']) =>
-  user ? questions : demoQuestions
 
 const questionBodyValidator = validator('json', (requestBody, c) => {
   if (!requestBody || typeof requestBody !== 'object') {
@@ -44,66 +51,174 @@ const questionBodyValidator = validator('json', (requestBody, c) => {
   } satisfies QuestionBody
 })
 
-export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
+const toPublicQuestion = <T extends { demoProfileId?: string }>(
+  questionRow: T,
+) => {
+  const { demoProfileId: _demoProfileId, ...publicQuestion } = questionRow
+
+  return publicQuestion
+}
+
+const getResolvedDemoProfile = (
+  demoProfile: DemoProfile | null,
+): DemoProfile => {
+  if (!demoProfile) {
+    throw new Error('Demo profile is required for unregistered requests')
+  }
+
+  return demoProfile
+}
+
+export const app = new Hono<QuestionsEnv>()
+  .use(async (c, next) => {
+    const user = c.get('user')
+
+    if (user) {
+      c.set('demoProfile', null)
+      await next()
+
+      return
+    }
+
+    const db = createDb(c.env.interview)
+    const demoProfile = await resolveDemoProfile(c, db)
+
+    c.set('demoProfile', demoProfile)
+    await next()
+  })
   .get('/api/questions', async (c) => {
     const user = c.get('user')
-    const questionsTable = getQuestionsTableForUser(user)
     const db = createDb(c.env.interview)
+
+    if (user) {
+      const questionRows = await db
+        .select()
+        .from(questions)
+        .orderBy(desc(questions.createdAt))
+
+      return c.json({ questions: questionRows }, 200)
+    }
+
+    const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
 
     const questionRows = await db
       .select()
-      .from(questionsTable)
-      .orderBy(desc(questionsTable.createdAt))
+      .from(demoQuestions)
+      .where(eq(demoQuestions.demoProfileId, demoProfile.id))
+      .orderBy(desc(demoQuestions.createdAt))
 
-    return c.json({ questions: questionRows }, 200)
+    return c.json({ questions: questionRows.map(toPublicQuestion) }, 200)
   })
   .post('/api/questions', questionBodyValidator, async (c) => {
     const user = c.get('user')
-    const questionsTable = getQuestionsTableForUser(user)
     const { question, answer } = c.req.valid('json')
     const db = createDb(c.env.interview)
-
-    // Demo bank is shared and unbounded otherwise — cap create for logged-out users.
-    if (!user) {
-      const [demoQuestionCountRow] = await db
-        .select({ value: count() })
-        .from(demoQuestions)
-
-      if ((demoQuestionCountRow?.value ?? 0) >= DEMO_QUESTIONS_LIMIT) {
-        return c.json(
-          {
-            error: `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`,
-          },
-          403,
-        )
-      }
-    }
-
     const questionId = crypto.randomUUID()
 
+    if (user) {
+      const [createdQuestion] = await db
+        .insert(questions)
+        .values({
+          id: questionId,
+          question,
+          answer,
+        })
+        .returning()
+
+      return c.json({ question: createdQuestion }, 201)
+    }
+
+    const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
+
+    const [demoQuestionCountRow] = await db
+      .select({ value: count() })
+      .from(demoQuestions)
+      .where(eq(demoQuestions.demoProfileId, demoProfile.id))
+
+    if ((demoQuestionCountRow?.value ?? 0) >= DEMO_QUESTIONS_LIMIT) {
+      return c.json(
+        {
+          error: `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`,
+        },
+        403,
+      )
+    }
+
     const [createdQuestion] = await db
-      .insert(questionsTable)
+      .insert(demoQuestions)
       .values({
         id: questionId,
+        demoProfileId: demoProfile.id,
         question,
         answer,
       })
       .returning()
 
-    return c.json({ question: createdQuestion }, 201)
+    return c.json({ question: toPublicQuestion(createdQuestion) }, 201)
   })
   .get('/api/questions/random', async (c) => {
     const user = c.get('user')
-    const questionsTable = getQuestionsTableForUser(user)
     const excludeQuery = c.req.query('exclude')
     const db = createDb(c.env.interview)
 
-    const selectRandomQuestion = async (excludedQuestionId?: string) => {
-      if (excludedQuestionId && isNonEmptyString(excludedQuestionId)) {
+    const excludedQuestionId =
+      excludeQuery && isNonEmptyString(excludeQuery)
+        ? excludeQuery.trim()
+        : undefined
+
+    if (user) {
+      const selectRandomQuestion = async (excludedId?: string) => {
+        if (excludedId) {
+          const [questionRow] = await db
+            .select()
+            .from(questions)
+            .where(ne(questions.id, excludedId))
+            .orderBy(sql`RANDOM()`)
+            .limit(1)
+
+          return questionRow
+        }
+
         const [questionRow] = await db
           .select()
-          .from(questionsTable)
-          .where(ne(questionsTable.id, excludedQuestionId.trim()))
+          .from(questions)
+          .orderBy(sql`RANDOM()`)
+          .limit(1)
+
+        return questionRow
+      }
+
+      const preferredQuestion = await selectRandomQuestion(excludedQuestionId)
+
+      if (preferredQuestion) {
+        return c.json({ question: preferredQuestion }, 200)
+      }
+
+      if (excludedQuestionId) {
+        const fallbackQuestion = await selectRandomQuestion()
+
+        if (fallbackQuestion) {
+          return c.json({ question: fallbackQuestion }, 200)
+        }
+      }
+
+      return c.json({ error: 'No questions found' as const }, 404)
+    }
+
+    const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
+    const demoProfileId = demoProfile.id
+
+    const selectRandomDemoQuestion = async (excludedId?: string) => {
+      if (excludedId) {
+        const [questionRow] = await db
+          .select()
+          .from(demoQuestions)
+          .where(
+            and(
+              eq(demoQuestions.demoProfileId, demoProfileId),
+              ne(demoQuestions.id, excludedId),
+            ),
+          )
           .orderBy(sql`RANDOM()`)
           .limit(1)
 
@@ -112,29 +227,25 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
 
       const [questionRow] = await db
         .select()
-        .from(questionsTable)
+        .from(demoQuestions)
+        .where(eq(demoQuestions.demoProfileId, demoProfileId))
         .orderBy(sql`RANDOM()`)
         .limit(1)
 
       return questionRow
     }
 
-    const excludedQuestionId =
-      excludeQuery && isNonEmptyString(excludeQuery)
-        ? excludeQuery.trim()
-        : undefined
-
-    const preferredQuestion = await selectRandomQuestion(excludedQuestionId)
+    const preferredQuestion = await selectRandomDemoQuestion(excludedQuestionId)
 
     if (preferredQuestion) {
-      return c.json({ question: preferredQuestion }, 200)
+      return c.json({ question: toPublicQuestion(preferredQuestion) }, 200)
     }
 
     if (excludedQuestionId) {
-      const fallbackQuestion = await selectRandomQuestion()
+      const fallbackQuestion = await selectRandomDemoQuestion()
 
       if (fallbackQuestion) {
-        return c.json({ question: fallbackQuestion }, 200)
+        return c.json({ question: toPublicQuestion(fallbackQuestion) }, 200)
       }
     }
 
@@ -142,73 +253,138 @@ export const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   })
   .get('/api/questions/:id', async (c) => {
     const user = c.get('user')
-    const questionsTable = getQuestionsTableForUser(user)
     const questionId = c.req.param('id')
 
     if (!isNonEmptyString(questionId)) {
       return c.json({ error: 'Question id is required' as const }, 400)
     }
 
+    const trimmedQuestionId = questionId.trim()
     const db = createDb(c.env.interview)
+
+    if (user) {
+      const [questionRow] = await db
+        .select()
+        .from(questions)
+        .where(eq(questions.id, trimmedQuestionId))
+        .limit(1)
+
+      if (!questionRow) {
+        return c.json({ error: 'Question not found' as const }, 404)
+      }
+
+      return c.json({ question: questionRow }, 200)
+    }
+
+    const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
 
     const [questionRow] = await db
       .select()
-      .from(questionsTable)
-      .where(eq(questionsTable.id, questionId.trim()))
+      .from(demoQuestions)
+      .where(
+        and(
+          eq(demoQuestions.id, trimmedQuestionId),
+          eq(demoQuestions.demoProfileId, demoProfile.id),
+        ),
+      )
       .limit(1)
 
     if (!questionRow) {
       return c.json({ error: 'Question not found' as const }, 404)
     }
 
-    return c.json({ question: questionRow }, 200)
+    return c.json({ question: toPublicQuestion(questionRow) }, 200)
   })
   .put('/api/questions/:id', questionBodyValidator, async (c) => {
     const user = c.get('user')
-    const questionsTable = getQuestionsTableForUser(user)
     const questionId = c.req.param('id')
 
     if (!isNonEmptyString(questionId)) {
       return c.json({ error: 'Question id is required' as const }, 400)
     }
 
+    const trimmedQuestionId = questionId.trim()
     const { question, answer } = c.req.valid('json')
     const db = createDb(c.env.interview)
 
+    if (user) {
+      const [updatedQuestion] = await db
+        .update(questions)
+        .set({
+          question,
+          answer,
+        })
+        .where(eq(questions.id, trimmedQuestionId))
+        .returning()
+
+      if (!updatedQuestion) {
+        return c.json({ error: 'Question not found' as const }, 404)
+      }
+
+      return c.json({ question: updatedQuestion }, 200)
+    }
+
+    const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
+
     const [updatedQuestion] = await db
-      .update(questionsTable)
+      .update(demoQuestions)
       .set({
         question,
         answer,
       })
-      .where(eq(questionsTable.id, questionId.trim()))
+      .where(
+        and(
+          eq(demoQuestions.id, trimmedQuestionId),
+          eq(demoQuestions.demoProfileId, demoProfile.id),
+        ),
+      )
       .returning()
 
     if (!updatedQuestion) {
       return c.json({ error: 'Question not found' as const }, 404)
     }
 
-    return c.json({ question: updatedQuestion }, 200)
+    return c.json({ question: toPublicQuestion(updatedQuestion) }, 200)
   })
   .delete('/api/questions/:id', async (c) => {
     const user = c.get('user')
-    const questionsTable = getQuestionsTableForUser(user)
     const questionId = c.req.param('id')
 
     if (!isNonEmptyString(questionId)) {
       return c.json({ error: 'Question id is required' as const }, 400)
     }
 
+    const trimmedQuestionId = questionId.trim()
     const db = createDb(c.env.interview)
 
+    if (user) {
+      const [deletedQuestion] = await db
+        .delete(questions)
+        .where(eq(questions.id, trimmedQuestionId))
+        .returning()
+
+      if (!deletedQuestion) {
+        return c.json({ error: 'Question not found' as const }, 404)
+      }
+
+      return c.json({ question: deletedQuestion }, 200)
+    }
+
+    const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
+
     const [deletedQuestion] = await db
-      .delete(questionsTable)
-      .where(eq(questionsTable.id, questionId.trim()))
+      .delete(demoQuestions)
+      .where(
+        and(
+          eq(demoQuestions.id, trimmedQuestionId),
+          eq(demoQuestions.demoProfileId, demoProfile.id),
+        ),
+      )
       .returning()
 
     if (!deletedQuestion) {
       return c.json({ error: 'Question not found' as const }, 404)
     }
 
-    return c.json({ question: deletedQuestion }, 200)
+    return c.json({ question: toPublicQuestion(deletedQuestion) }, 200)
   })

@@ -3,7 +3,7 @@ import { reatomRoute, urlAtom } from '@reatom/core'
 import { api } from '@/common/api'
 import { isLoggedIn, isSessionPending } from '@/common/auth'
 
-/** Serializable question shape returned by the home route loader. */
+/** Serializable question shape returned by question page loaders. */
 export type HomeQuestion = {
   id: string
   question: string
@@ -12,14 +12,27 @@ export type HomeQuestion = {
   updatedAt: Date | string | number
 }
 
-export type HomeLoaderData = {
+export type QuestionsLoaderData = {
   questions: HomeQuestion[]
+}
+
+export type HomeLoaderData = QuestionsLoaderData & {
   randomQuestion: HomeQuestion | null
 }
 
 export type HomeRouteParams = {
   /** Auth bank mode — included so the loader re-runs on sign-in / sign-out. */
   mode: 'demo' | 'personal'
+}
+
+const getQuestionRouteParams = (): HomeRouteParams | null => {
+  if (isSessionPending()) {
+    return null
+  }
+
+  return {
+    mode: isLoggedIn() ? 'personal' : 'demo',
+  }
 }
 
 const buildEmptyHomeLoaderData = (
@@ -29,15 +42,20 @@ const buildEmptyHomeLoaderData = (
   randomQuestion: null,
 })
 
-const loadHomeQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
-  const listResponse = await api.questions.$get()
+const loadQuestions = async (): Promise<HomeQuestion[]> => {
+  const response = await api.questions.$get()
 
-  if (!listResponse.ok) {
+  if (!response.ok) {
     throw new Error('Failed to load questions')
   }
 
-  const listPayload = await listResponse.json()
-  const questions = listPayload.questions as HomeQuestion[]
+  const payload = await response.json()
+
+  return payload.questions as HomeQuestion[]
+}
+
+const loadQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
+  const questions = await loadQuestions()
 
   if (questions.length === 0) {
     return buildEmptyHomeLoaderData(questions)
@@ -69,19 +87,20 @@ const loadHomeQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
 export const homeRoute = reatomRoute(
   {
     path: '',
-    params(): HomeRouteParams | null {
-      // Block until auth is known so demo vs personal bank is correct.
-      if (isSessionPending()) {
-        return null
-      }
-
-      return {
-        mode: isLoggedIn() ? 'personal' : 'demo',
-      }
-    },
-    loader: loadHomeQuestionsAndRandom,
+    params: getQuestionRouteParams,
+    loader: loadQuestionsAndRandom,
   },
   'homeRoute',
+)
+
+/** Public test page for the sidebar layout. */
+export const testRoute = reatomRoute(
+  {
+    path: 'test',
+    params: getQuestionRouteParams,
+    loader: loadQuestionsAndRandom,
+  },
+  'testRoute',
 )
 
 /**

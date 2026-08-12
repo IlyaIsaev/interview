@@ -1,3 +1,7 @@
+import type {
+  ExecutionContext,
+  ScheduledController,
+} from '@cloudflare/workers-types'
 import { Hono } from 'hono'
 
 import {
@@ -6,7 +10,7 @@ import {
   type AuthEnv,
   type AuthVariables,
 } from './auth'
-
+import { purgeExpiredDemoProfiles } from './demo-profile'
 import { app as questionsApp } from './questions'
 
 const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
@@ -27,6 +31,15 @@ const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
   .route('/', authApp)
   .route('/', questionsApp)
 
-export default app
+export default {
+  fetch: app.fetch,
+  async scheduled(
+    _controller: ScheduledController,
+    env: AuthEnv,
+    _ctx: ExecutionContext,
+  ) {
+    await purgeExpiredDemoProfiles(env)
+  },
+}
 
 export type AppType = typeof app

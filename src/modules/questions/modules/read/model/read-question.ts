@@ -9,7 +9,7 @@ import {
 
 import { api } from '@/common/api'
 import type { HomeLoaderData } from '@/common/routes'
-import { homeRoute } from '@/common/routes'
+import { homeRoute, testRoute } from '@/common/routes'
 
 import {
   isHomeLoaderDataAlreadyHydrated,
@@ -137,6 +137,10 @@ export const fetchQuestionById = action(async (questionId: string) => {
   return question
 }, 'fetchQuestionById').extend(withAsync())
 
+export const selectReadQuestion = action(async (questionId: string) => {
+  await fetchQuestionById(questionId)
+}, 'selectReadQuestion')
+
 export const pickReadQuestion = action(async () => {
   const excludeQuestionId = readQuestion()?.id
 
@@ -149,7 +153,7 @@ export const openReadQuestion = action(async (questionId: string) => {
   try {
     homeRoute.go()
 
-    await fetchQuestionById(questionId)
+    await selectReadQuestion(questionId)
   } finally {
     isOpeningReadQuestion.set(false)
   }
@@ -164,7 +168,7 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
 
   readAnswerVisible.setFalse()
 
-  if (!homeRoute.exact()) {
+  if (!homeRoute.exact() && !testRoute.exact()) {
     return
   }
 
@@ -183,7 +187,7 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
 
 // Enter: show answer first; after answer is visible, go to the next question.
 effect(() => {
-  if (!homeRoute.exact() || !readQuestion()) {
+  if ((!homeRoute.exact() && !testRoute.exact()) || !readQuestion()) {
     return
   }
 

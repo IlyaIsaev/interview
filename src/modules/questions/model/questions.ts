@@ -2,9 +2,9 @@ import { action, atom, computed, effect } from '@reatom/core'
 
 import { isLoggedIn } from '@/common/auth'
 import type { HomeLoaderData, HomeQuestion } from '@/common/routes'
-import { homeRoute } from '@/common/routes'
+import { homeRoute, testRoute } from '@/common/routes'
 
-/** Max questions allowed in the shared demo bank (logged-out mode). Keep in sync with worker. */
+/** Max questions allowed per demo profile (logged-out mode). Keep in sync with worker. */
 export const DEMO_QUESTIONS_LIMIT = 30
 
 export type Question = HomeQuestion
@@ -27,6 +27,12 @@ export const isHomeLoaderDataAlreadyHydrated = (
   homeLoaderPayload: HomeLoaderData,
 ) => lastHydratedHomeLoaderPayload === homeLoaderPayload
 
+const hydrateQuestions = action((questionBank: Question[]) => {
+  questions.set(questionBank)
+  isQuestionsLoaded.set(true)
+  questionsError.set(undefined)
+}, 'hydrateQuestions')
+
 /** Apply home route loader payload into questions atoms (from the home page model). */
 export const hydrateQuestionsFromHomeLoader = action(
   (homeLoaderPayload: HomeLoaderData) => {
@@ -34,9 +40,7 @@ export const hydrateQuestionsFromHomeLoader = action(
       return
     }
 
-    questions.set(homeLoaderPayload.questions)
-    isQuestionsLoaded.set(true)
-    questionsError.set(undefined)
+    hydrateQuestions(homeLoaderPayload.questions)
     lastHydratedHomeLoaderPayload = homeLoaderPayload
   },
   'hydrateQuestionsFromHomeLoader',
@@ -76,10 +80,10 @@ export const canCreateQuestion = computed(() => {
 
 export const demoQuestionsLimitMessage = `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`
 
-// Clear list hydration when home is blocked/unmatched (session pending, leave home).
-// Loader re-runs automatically when `params().mode` changes (demo ↔ personal).
+// Clear list hydration when neither questions page is active.
+// The home loader re-runs automatically when auth mode changes (demo ↔ personal).
 effect(() => {
-  if (homeRoute() !== null) {
+  if (homeRoute() !== null || testRoute() !== null) {
     return
   }
 
