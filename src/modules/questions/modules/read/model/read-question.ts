@@ -9,7 +9,7 @@ import {
 
 import { api } from '@/common/api'
 import type { HomeLoaderData } from '@/common/routes'
-import { homeRoute, testRoute } from '@/common/routes'
+import { homeRoute } from '@/common/routes'
 
 import {
   isHomeLoaderDataAlreadyHydrated,
@@ -168,10 +168,6 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
 
   readAnswerVisible.setFalse()
 
-  if (!homeRoute.exact() && !testRoute.exact()) {
-    return
-  }
-
   if (questions().length === 0) {
     return
   }
@@ -187,7 +183,7 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
 
 // Enter: show answer first; after answer is visible, go to the next question.
 effect(() => {
-  if ((!homeRoute.exact() && !testRoute.exact()) || !readQuestion()) {
+  if (!homeRoute.exact() || !readQuestion()) {
     return
   }
 

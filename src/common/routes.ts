@@ -93,16 +93,6 @@ export const homeRoute = reatomRoute(
   'homeRoute',
 )
 
-/** Public test page for the sidebar layout. */
-export const testRoute = reatomRoute(
-  {
-    path: 'test',
-    params: getQuestionRouteParams,
-    loader: loadQuestionsAndRandom,
-  },
-  'testRoute',
-)
-
 /**
  * Guest-only sign-in.
  * Blocks while the session is loading; redirects home when already authenticated.

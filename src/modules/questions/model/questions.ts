@@ -2,7 +2,7 @@ import { action, atom, computed, effect } from '@reatom/core'
 
 import { isLoggedIn } from '@/common/auth'
 import type { HomeLoaderData, HomeQuestion } from '@/common/routes'
-import { homeRoute, testRoute } from '@/common/routes'
+import { homeRoute } from '@/common/routes'
 
 /** Max questions allowed per demo profile (logged-out mode). Keep in sync with worker. */
 export const DEMO_QUESTIONS_LIMIT = 30
@@ -80,10 +80,10 @@ export const canCreateQuestion = computed(() => {
 
 export const demoQuestionsLimitMessage = `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`
 
-// Clear list hydration when neither questions page is active.
+// Clear list hydration when the home route is inactive.
 // The home loader re-runs automatically when auth mode changes (demo ↔ personal).
 effect(() => {
-  if (homeRoute() !== null || testRoute() !== null) {
+  if (homeRoute() !== null) {
     return
   }
 
