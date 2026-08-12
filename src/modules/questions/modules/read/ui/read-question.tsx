@@ -10,7 +10,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/common/components/ui/empty'
-import { Separator } from '@/common/components/ui/separator'
+
 import { Spinner } from '@/common/components/ui/spinner'
 
 import { openCreateQuestionDialog } from '../../create'
@@ -57,17 +57,14 @@ export const ReadQuestion = reatomComponent(() => {
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col items-center gap-6 self-stretch">
-      <MarkdownContent className="w-full text-center text-2xl font-medium tracking-tight text-balance">
+      <MarkdownContent className="w-full text-left text-2xl font-medium tracking-tight text-balance">
         {currentQuestion.question}
       </MarkdownContent>
 
       {isAnswerVisible ? (
-        <div className="w-full space-y-4">
-          <Separator />
-          <MarkdownContent size="answer" className="w-full text-foreground">
-            {currentQuestion.answer}
-          </MarkdownContent>
-        </div>
+        <MarkdownContent size="answer" className="w-full text-foreground">
+          {currentQuestion.answer}
+        </MarkdownContent>
       ) : null}
 
       <div className="mt-auto flex flex-wrap items-center justify-center gap-2">
