@@ -2,30 +2,16 @@ import { reatomRoute, urlAtom } from '@reatom/core'
 
 import { api } from '@/common/api'
 import { isLoggedIn, isSessionPending } from '@/common/auth'
+import type { Question, QuestionsHydrationPayload } from '@/modules/questions'
 
-/** Serializable question shape returned by question page loaders. */
-export type HomeQuestion = {
-  id: string
-  question: string
-  answer: string
-  createdAt: Date | string | number
-  updatedAt: Date | string | number
-}
-
-export type QuestionsLoaderData = {
-  questions: HomeQuestion[]
-}
-
-export type HomeLoaderData = QuestionsLoaderData & {
-  randomQuestion: HomeQuestion | null
-}
+export type HomeLoaderData = QuestionsHydrationPayload
 
 export type HomeRouteParams = {
   /** Auth bank mode — included so the loader re-runs on sign-in / sign-out. */
   mode: 'demo' | 'personal'
 }
 
-const getQuestionRouteParams = (): HomeRouteParams | null => {
+const getHomeRouteParams = (): HomeRouteParams | null => {
   if (isSessionPending()) {
     return null
   }
@@ -36,13 +22,13 @@ const getQuestionRouteParams = (): HomeRouteParams | null => {
 }
 
 const buildEmptyHomeLoaderData = (
-  questions: HomeQuestion[],
+  questionBank: Question[],
 ): HomeLoaderData => ({
-  questions,
+  questions: questionBank,
   randomQuestion: null,
 })
 
-const loadQuestions = async (): Promise<HomeQuestion[]> => {
+const loadQuestions = async (): Promise<Question[]> => {
   const response = await api.questions.$get()
 
   if (!response.ok) {
@@ -51,21 +37,21 @@ const loadQuestions = async (): Promise<HomeQuestion[]> => {
 
   const payload = await response.json()
 
-  return payload.questions as HomeQuestion[]
+  return payload.questions as Question[]
 }
 
 const loadQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
-  const questions = await loadQuestions()
+  const questionBank = await loadQuestions()
 
-  if (questions.length === 0) {
-    return buildEmptyHomeLoaderData(questions)
+  if (questionBank.length === 0) {
+    return buildEmptyHomeLoaderData(questionBank)
   }
 
   const randomResponse = await api.questions.random.$get()
 
   if (!randomResponse.ok) {
     if (randomResponse.status === 404) {
-      return buildEmptyHomeLoaderData(questions)
+      return buildEmptyHomeLoaderData(questionBank)
     }
 
     throw new Error('Failed to load question')
@@ -74,8 +60,8 @@ const loadQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
   const randomPayload = await randomResponse.json()
 
   return {
-    questions,
-    randomQuestion: randomPayload.question as HomeQuestion,
+    questions: questionBank,
+    randomQuestion: randomPayload.question as Question,
   }
 }
 
@@ -87,7 +73,7 @@ const loadQuestionsAndRandom = async (): Promise<HomeLoaderData> => {
 export const homeRoute = reatomRoute(
   {
     path: '',
-    params: getQuestionRouteParams,
+    params: getHomeRouteParams,
     loader: loadQuestionsAndRandom,
   },
   'homeRoute',

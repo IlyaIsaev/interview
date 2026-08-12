@@ -1,18 +1,28 @@
-import { action, atom, computed, effect } from '@reatom/core'
+import { action, atom, computed } from '@reatom/core'
 
 import { isLoggedIn } from '@/common/auth'
-import type { HomeLoaderData, HomeQuestion } from '@/common/routes'
-import { homeRoute } from '@/common/routes'
 
 /** Max questions allowed per demo profile (logged-out mode). Keep in sync with worker. */
 export const DEMO_QUESTIONS_LIMIT = 30
 
-export type Question = HomeQuestion
+export type Question = {
+  id: string
+  question: string
+  answer: string
+  createdAt: Date | string | number
+  updatedAt: Date | string | number
+}
 
-/** Questions bank for the current auth mode (hydrated from route loaders / mutations). */
+/** Snapshot used to hydrate the questions bank and current read question. */
+export type QuestionsHydrationPayload = {
+  questions: Question[]
+  randomQuestion: Question | null
+}
+
+/** Questions bank for the current auth mode (hydrated from loaders / mutations). */
 export const questions = atom<Question[]>([], 'questions')
 
-/** True after home loader data has been applied (or a mutation refreshed the list). */
+/** True after hydration data has been applied (or a mutation refreshed the list). */
 export const isQuestionsLoaded = atom(false, 'isQuestionsLoaded')
 
 export const questionsError = atom<Error | undefined>(
@@ -20,12 +30,12 @@ export const questionsError = atom<Error | undefined>(
   'questionsError',
 )
 
-/** Last home loader payload applied — identity check avoids re-render loops. */
-let lastHydratedHomeLoaderPayload: HomeLoaderData | null = null
+/** Last hydration payload applied — identity check avoids re-render loops. */
+let lastHydratedQuestionsPayload: QuestionsHydrationPayload | null = null
 
-export const isHomeLoaderDataAlreadyHydrated = (
-  homeLoaderPayload: HomeLoaderData,
-) => lastHydratedHomeLoaderPayload === homeLoaderPayload
+export const isQuestionsHydrationPayloadAlreadyApplied = (
+  hydrationPayload: QuestionsHydrationPayload,
+) => lastHydratedQuestionsPayload === hydrationPayload
 
 const hydrateQuestions = action((questionBank: Question[]) => {
   questions.set(questionBank)
@@ -33,22 +43,22 @@ const hydrateQuestions = action((questionBank: Question[]) => {
   questionsError.set(undefined)
 }, 'hydrateQuestions')
 
-/** Apply home route loader payload into questions atoms (from the home page model). */
-export const hydrateQuestionsFromHomeLoader = action(
-  (homeLoaderPayload: HomeLoaderData) => {
-    if (lastHydratedHomeLoaderPayload === homeLoaderPayload) {
+/** Apply a hydration snapshot into questions atoms. */
+export const hydrateQuestionsFromPayload = action(
+  (hydrationPayload: QuestionsHydrationPayload) => {
+    if (lastHydratedQuestionsPayload === hydrationPayload) {
       return
     }
 
-    hydrateQuestions(homeLoaderPayload.questions)
-    lastHydratedHomeLoaderPayload = homeLoaderPayload
+    hydrateQuestions(hydrationPayload.questions)
+    lastHydratedQuestionsPayload = hydrationPayload
   },
-  'hydrateQuestionsFromHomeLoader',
+  'hydrateQuestionsFromPayload',
 )
 
-/** Clear hydration cache when the home route unmatches (e.g. auth mode switch). */
+/** Clear hydration cache when the questions UI unmounts (e.g. leave home). */
 export const resetQuestionsHydration = action(() => {
-  lastHydratedHomeLoaderPayload = null
+  lastHydratedQuestionsPayload = null
   isQuestionsLoaded.set(false)
 }, 'resetQuestionsHydration')
 
@@ -79,13 +89,3 @@ export const canCreateQuestion = computed(() => {
 }, 'canCreateQuestion')
 
 export const demoQuestionsLimitMessage = `Demo mode allows up to ${DEMO_QUESTIONS_LIMIT} questions. Sign in to add more.`
-
-// Clear list hydration when the home route is inactive.
-// The home loader re-runs automatically when auth mode changes (demo ↔ personal).
-effect(() => {
-  if (homeRoute() !== null) {
-    return
-  }
-
-  resetQuestionsHydration()
-}, 'resetQuestionsWhenHomeUnmatched')

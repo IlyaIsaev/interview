@@ -23,7 +23,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/common/components/ui/tooltip'
-import { homeRoute } from '@/common/routes'
 
 import {
   CreateQuestionButton,
@@ -74,9 +73,7 @@ const activateQuestionFromKeyboard = action(
 
 export const QuestionsDrawer = reatomComponent(() => {
   const questionBank = questions()
-  // List is hydrated from the home route loader; only show loading on home while it runs.
-  const isQuestionsListLoading =
-    isSessionPending() || (homeRoute.exact() && !isQuestionsLoaded())
+  const isQuestionsListLoading = isSessionPending() || !isQuestionsLoaded()
   const questionsLoadError = questionsError()
   const canAddQuestion = canCreateQuestion()
 

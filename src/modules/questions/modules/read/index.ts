@@ -1,9 +1,10 @@
 export {
   adoptReadQuestionIfEmpty,
+  clearReadQuestion,
   clearReadQuestionIfId,
   fetchQuestionById,
   fetchRandomQuestion,
-  hydrateReadQuestionFromHomeLoader,
+  hydrateReadQuestionFromPayload,
   openReadQuestion,
   pickReadQuestion,
   readAnswerVisible,

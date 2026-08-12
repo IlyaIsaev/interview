@@ -8,13 +8,12 @@ import {
 } from '@reatom/core'
 
 import { api } from '@/common/api'
-import type { HomeLoaderData } from '@/common/routes'
-import { homeRoute } from '@/common/routes'
 
 import {
-  isHomeLoaderDataAlreadyHydrated,
+  isQuestionsHydrationPayloadAlreadyApplied,
   questions,
   type Question,
+  type QuestionsHydrationPayload,
 } from '../../../model/questions'
 
 export const readQuestion = atom<Question | null>(null, 'readQuestion')
@@ -27,6 +26,11 @@ export const showReadAnswer = action(() => {
   readAnswerVisible.setTrue()
 }, 'showReadAnswer')
 
+export const clearReadQuestion = action(() => {
+  readQuestion.set(null)
+  readAnswerVisible.setFalse()
+}, 'clearReadQuestion')
+
 /** Show a newly created question on home when nothing is displayed yet. */
 export const adoptReadQuestionIfEmpty = action((question: Question) => {
   if (readQuestion()) {
@@ -38,7 +42,7 @@ export const adoptReadQuestionIfEmpty = action((question: Question) => {
   readAnswerVisible.setFalse()
 }, 'adoptReadQuestionIfEmpty')
 
-/** Navigate home and show this question in the read view. */
+/** Show this question in the read view (skips the next hydration overwrite). */
 export const showCreatedReadQuestion = action((question: Question) => {
   isOpeningReadQuestion.set(true)
 
@@ -46,20 +50,18 @@ export const showCreatedReadQuestion = action((question: Question) => {
     readQuestion.set(question)
 
     readAnswerVisible.setFalse()
-
-    homeRoute.go()
   } finally {
     isOpeningReadQuestion.set(false)
   }
 }, 'showCreatedReadQuestion')
 
 /**
- * Apply home loader payload into the read atom (from the home page model).
- * Skips when this loader payload was already applied so "Next" is not reset.
+ * Apply hydration snapshot into the read atom.
+ * Skips when this payload was already applied so "Next" is not reset.
  */
-export const hydrateReadQuestionFromHomeLoader = action(
-  (homeLoaderPayload: HomeLoaderData) => {
-    if (isHomeLoaderDataAlreadyHydrated(homeLoaderPayload)) {
+export const hydrateReadQuestionFromPayload = action(
+  (hydrationPayload: QuestionsHydrationPayload) => {
+    if (isQuestionsHydrationPayloadAlreadyApplied(hydrationPayload)) {
       return
     }
 
@@ -67,11 +69,11 @@ export const hydrateReadQuestionFromHomeLoader = action(
       return
     }
 
-    readQuestion.set(homeLoaderPayload.randomQuestion)
+    readQuestion.set(hydrationPayload.randomQuestion)
 
     readAnswerVisible.setFalse()
   },
-  'hydrateReadQuestionFromHomeLoader',
+  'hydrateReadQuestionFromPayload',
 )
 
 export const fetchRandomQuestion = action(
@@ -86,9 +88,7 @@ export const fetchRandomQuestion = action(
 
     if (!response.ok) {
       if (response.status === 404) {
-        readQuestion.set(null)
-
-        readAnswerVisible.setFalse()
+        clearReadQuestion()
 
         return null
       }
@@ -117,9 +117,7 @@ export const fetchQuestionById = action(async (questionId: string) => {
 
   if (!response.ok) {
     if (response.status === 404) {
-      readQuestion.set(null)
-
-      readAnswerVisible.setFalse()
+      clearReadQuestion()
 
       return null
     }
@@ -147,12 +145,11 @@ export const pickReadQuestion = action(async () => {
   await fetchRandomQuestion(excludeQuestionId)
 }, 'pickReadQuestion')
 
+/** Select a question for reading (skips the next hydration overwrite). */
 export const openReadQuestion = action(async (questionId: string) => {
   isOpeningReadQuestion.set(true)
 
   try {
-    homeRoute.go()
-
     await selectReadQuestion(questionId)
   } finally {
     isOpeningReadQuestion.set(false)
@@ -164,9 +161,7 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
     return
   }
 
-  readQuestion.set(null)
-
-  readAnswerVisible.setFalse()
+  clearReadQuestion()
 
   if (questions().length === 0) {
     return
@@ -175,15 +170,14 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
   try {
     await fetchRandomQuestion()
   } catch {
-    readQuestion.set(null)
-
-    readAnswerVisible.setFalse()
+    clearReadQuestion()
   }
 }, 'clearReadQuestionIfId')
 
 // Enter: show answer first; after answer is visible, go to the next question.
+// Active only while a question is loaded (page layer clears it when leaving).
 effect(() => {
-  if (!homeRoute.exact() || !readQuestion()) {
+  if (!readQuestion()) {
     return
   }
 

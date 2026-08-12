@@ -39,10 +39,11 @@ export {
 export {
   ReadQuestion,
   adoptReadQuestionIfEmpty,
+  clearReadQuestion,
   clearReadQuestionIfId,
   fetchQuestionById,
   fetchRandomQuestion,
-  hydrateReadQuestionFromHomeLoader,
+  hydrateReadQuestionFromPayload,
   openReadQuestion,
   pickReadQuestion,
   readAnswerVisible,
@@ -52,22 +53,23 @@ export {
   showReadAnswer,
 } from './modules/read'
 
-export { hydrateHomeLoaderData } from './model/hydrate-home-loader'
+export { hydrateQuestionsSession } from './model/hydrate-questions'
 
 export {
   canCreateQuestion,
   DEMO_QUESTIONS_LIMIT,
   demoQuestionsLimitMessage,
-  hydrateQuestionsFromHomeLoader,
+  hydrateQuestionsFromPayload,
   isQuestionsLoaded,
   prependQuestion,
   questions,
   questionsError,
   removeQuestion,
   replaceQuestion,
+  resetQuestionsHydration,
 } from './model/questions'
 
-export type { Question } from './model/questions'
+export type { Question, QuestionsHydrationPayload } from './model/questions'
 
 export { QuestionsDrawer } from './ui/questions-drawer'
 export { QuestionsSidebar } from './ui/questions-sidebar'

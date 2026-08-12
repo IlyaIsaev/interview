@@ -1,14 +1,21 @@
 import { effect } from '@reatom/core'
 
 import { homeRoute } from '@/common/routes'
-import { hydrateHomeLoaderData } from '@/modules/questions'
+import {
+  clearReadQuestion,
+  hydrateQuestionsSession,
+  resetQuestionsHydration,
+} from '@/modules/questions'
 
 /**
- * When the home route is active and its loader has payload, hydrate domain atoms.
- * Kept out of the view so render stays declarative.
+ * Bridge the home route loader into the questions module.
+ * Route awareness stays in the page layer — modules never import routes.
  */
 effect(() => {
   if (!homeRoute()) {
+    resetQuestionsHydration()
+    clearReadQuestion()
+
     return
   }
 
@@ -18,5 +25,5 @@ effect(() => {
     return
   }
 
-  hydrateHomeLoaderData(homeLoaderPayload)
-}, 'homePageHydrateLoader')
+  hydrateQuestionsSession(homeLoaderPayload)
+}, 'homePageSyncQuestionsSession')
