@@ -2,9 +2,12 @@ import Markdown from 'markdown-to-jsx'
 
 import { cn } from '@/common/lib/utils'
 
+type MarkdownContentSize = 'default' | 'answer'
+
 type MarkdownContentProps = {
   children: string
   className?: string
+  size?: MarkdownContentSize
 }
 
 const markdownOptions = {
@@ -95,11 +98,17 @@ const markdownOptions = {
   },
 } as const
 
-function MarkdownContent({ children, className }: MarkdownContentProps) {
+function MarkdownContent({
+  children,
+  className,
+  size = 'default',
+}: MarkdownContentProps) {
   return (
     <div
       className={cn(
         'min-w-0 max-w-none break-words text-sm text-foreground',
+        size === 'answer' &&
+          '[&_h1]:text-2xl [&_h2]:text-xl [&_h3]:text-lg [&_p]:text-lg [&_p]:leading-8 [&_ul]:text-lg [&_ul]:leading-8 [&_ol]:text-lg [&_ol]:leading-8 [&_li]:text-lg [&_li]:leading-8 [&_blockquote]:text-lg [&_blockquote]:leading-8 [&_table]:text-base [&_code]:text-base [&_pre]:text-base',
         className,
       )}
     >

@@ -62,12 +62,12 @@ export const ReadQuestion = reatomComponent(() => {
       </MarkdownContent>
 
       {isAnswerVisible ? (
-        <>
+        <div className="w-full space-y-4">
           <Separator />
-          <MarkdownContent className="w-full text-base text-muted-foreground">
+          <MarkdownContent size="answer" className="w-full text-foreground">
             {currentQuestion.answer}
           </MarkdownContent>
-        </>
+        </div>
       ) : null}
 
       <div className="mt-auto flex flex-wrap items-center justify-center gap-2">
