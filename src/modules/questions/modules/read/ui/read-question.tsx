@@ -57,9 +57,9 @@ export const ReadQuestion = reatomComponent(() => {
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-3xl flex-1 flex-col items-center gap-6 self-stretch">
-      <h2 className="text-center text-2xl font-medium tracking-tight text-balance">
+      <MarkdownContent className="w-full text-center text-2xl font-medium tracking-tight text-balance">
         {currentQuestion.question}
-      </h2>
+      </MarkdownContent>
 
       {isAnswerVisible ? (
         <>

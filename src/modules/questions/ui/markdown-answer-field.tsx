@@ -6,18 +6,31 @@ import { Field, FieldError, FieldLabel } from '@/common/components/ui/field'
 import { Textarea } from '@/common/components/ui/textarea'
 import { cn } from '@/common/lib/utils'
 
-type MarkdownAnswerFieldProps = {
+type MarkdownFieldProps = {
   field: FieldAtom<string>
   label: string
   name?: string
   className?: string
+  placeholder?: string
+  previewPlaceholder?: string
+  textareaClassName?: string
+  previewClassName?: string
 }
 
-export const MarkdownAnswerField = reatomComponent(
-  ({ field, label, name, className }: MarkdownAnswerFieldProps) => {
+export const MarkdownField = reatomComponent(
+  ({
+    field,
+    label,
+    name,
+    className,
+    placeholder = 'Write in Markdown…',
+    previewPlaceholder = 'Markdown preview',
+    textareaClassName,
+    previewClassName,
+  }: MarkdownFieldProps) => {
     const fieldBinding = bindField(field)
     const hasValidationError = Boolean(fieldBinding.error)
-    const answerMarkdown = fieldBinding.value ?? ''
+    const markdown = fieldBinding.value ?? ''
 
     return (
       <Field
@@ -31,19 +44,29 @@ export const MarkdownAnswerField = reatomComponent(
           <Textarea
             id={name}
             name={name}
-            className="min-h-40 flex-1 resize-none md:min-h-0 [field-sizing:fixed]"
+            className={cn(
+              'min-h-40 flex-1 resize-none md:min-h-0 [field-sizing:fixed]',
+              textareaClassName,
+            )}
             aria-invalid={hasValidationError || undefined}
-            placeholder="Write answer in Markdown…"
-            value={answerMarkdown}
+            placeholder={placeholder}
+            value={markdown}
             onChange={fieldBinding.onChange}
             onBlur={fieldBinding.onBlur}
             onFocus={fieldBinding.onFocus}
           />
-          <div className="min-h-40 overflow-y-auto rounded-lg border border-border bg-muted/20 p-3 md:min-h-0">
-            {answerMarkdown.trim() ? (
-              <MarkdownContent>{answerMarkdown}</MarkdownContent>
+          <div
+            className={cn(
+              'min-h-40 overflow-y-auto rounded-lg border border-border bg-muted/20 p-3 md:min-h-0',
+              previewClassName,
+            )}
+          >
+            {markdown.trim() ? (
+              <MarkdownContent>{markdown}</MarkdownContent>
             ) : (
-              <p className="text-sm text-muted-foreground">Markdown preview</p>
+              <p className="text-sm text-muted-foreground">
+                {previewPlaceholder}
+              </p>
             )}
           </div>
         </div>
@@ -51,5 +74,16 @@ export const MarkdownAnswerField = reatomComponent(
       </Field>
     )
   },
+  'MarkdownField',
+)
+
+export const MarkdownAnswerField = reatomComponent(
+  (props: Omit<MarkdownFieldProps, 'placeholder' | 'previewPlaceholder'>) => (
+    <MarkdownField
+      {...props}
+      placeholder="Write answer in Markdown…"
+      previewPlaceholder="Markdown preview"
+    />
+  ),
   'MarkdownAnswerField',
 )

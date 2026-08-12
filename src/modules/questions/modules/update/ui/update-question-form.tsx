@@ -4,14 +4,16 @@ import { reatomComponent } from '@reatom/react'
 import { Button } from '@/common/components/ui/button'
 import { FieldError, FieldGroup, FieldSet } from '@/common/components/ui/field'
 
-import { MarkdownAnswerField } from '../../../ui/markdown-answer-field'
+import {
+  MarkdownAnswerField,
+  MarkdownField,
+} from '../../../ui/markdown-answer-field'
 import {
   closeUpdateQuestionDialog,
   loadUpdateQuestion,
   submitUpdateQuestionForm,
   updateQuestionForm,
 } from '../model/update-question'
-import { TextField } from './text-field'
 
 export const UpdateQuestionForm = reatomComponent(() => {
   const submitError = updateQuestionForm.submit.error()
@@ -32,11 +34,12 @@ export const UpdateQuestionForm = reatomComponent(() => {
         disabled={isPending}
       >
         <FieldGroup className="flex min-h-0 flex-1 flex-col gap-4">
-          <TextField
+          <MarkdownField
             field={updateQuestionForm.fields.question}
             label="Question"
-            type="text"
             name="question"
+            placeholder="Write question in Markdown…"
+            previewPlaceholder="Question preview"
           />
           <MarkdownAnswerField
             field={updateQuestionForm.fields.answer}
