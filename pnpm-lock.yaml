@@ -32,6 +32,9 @@ importers:
       better-auth:
         specifier: ^1.6.25
         version: 1.6.25(@cloudflare/workers-types@5.20260801.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@5.20260801.1)(kysely@0.29.4))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      charter-webfont:
+        specifier: ^4.1.0
+        version: 4.1.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1885,6 +1888,9 @@ packages:
   chalk@5.6.2:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
+  charter-webfont@4.1.0:
+    resolution: {integrity: sha512-nYu9iCmmhHTHm3UxQagborgPJZ6VjlFD6BKP6AqkqRrVC5YbRkFv8up2Ccg3exsaRA0jbIt18+ge4BkYMRugzA==}
 
   class-variance-authority@0.7.1:
     resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
@@ -4710,6 +4716,8 @@ snapshots:
   caniuse-lite@1.0.30001806: {}
 
   chalk@5.6.2: {}
+
+  charter-webfont@4.1.0: {}
 
   class-variance-authority@0.7.1:
     dependencies:
