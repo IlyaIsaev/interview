@@ -1,29 +1,36 @@
 import { effect } from '@reatom/core'
 
-import { homeRoute } from '@/common/routes'
-import {
-  clearReadQuestion,
-  hydrateQuestionsSession,
-  resetQuestionsHydration,
-} from '@/modules/questions'
+import { homeRoute, questionRoute, questionsRoute } from '@/common/routes'
 
 /**
- * Bridge the home route loader into the questions module.
- * Route awareness stays in the page layer — modules never import routes.
+ * `/` is empty: redirect into the questions flow with the first list question,
+ * or to `/questions` when the bank is empty.
  */
 effect(() => {
-  if (!homeRoute()) {
-    resetQuestionsHydration()
-    clearReadQuestion()
+  if (!homeRoute.exact()) {
+    return
+  }
+
+  if (!homeRoute.loader.ready()) {
+    return
+  }
+
+  const redirectPayload = homeRoute.loader.data()
+
+  if (!redirectPayload) {
+    return
+  }
+
+  if (redirectPayload.firstQuestion) {
+    questionRoute.go(
+      {
+        questionId: redirectPayload.firstQuestion.id,
+      },
+      true,
+    )
 
     return
   }
 
-  const homeLoaderPayload = homeRoute.loader.data()
-
-  if (!homeLoaderPayload) {
-    return
-  }
-
-  hydrateQuestionsSession(homeLoaderPayload)
-}, 'homePageSyncQuestionsSession')
+  questionsRoute.go(undefined, true)
+}, 'homePageRedirectToQuestions')

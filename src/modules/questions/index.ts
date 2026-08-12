@@ -39,19 +39,24 @@ export {
 export {
   ReadQuestion,
   adoptReadQuestionIfEmpty,
+  clearQuestionPathNavigationRequest,
   clearReadQuestion,
   clearReadQuestionIfId,
   fetchQuestionById,
   fetchRandomQuestion,
   hydrateReadQuestionFromPayload,
+  loadRandomQuestionId,
   openReadQuestion,
-  pickReadQuestion,
+  questionPathNavigationRequest,
   readAnswerVisible,
   readQuestion,
   selectReadQuestion,
   showCreatedReadQuestion,
+  showQuestionFromBank,
   showReadAnswer,
 } from './modules/read'
+
+export type { QuestionPathNavigationRequest } from './modules/read'
 
 export { hydrateQuestionsSession } from './model/hydrate-questions'
 

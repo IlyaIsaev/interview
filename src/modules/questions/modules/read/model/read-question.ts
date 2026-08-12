@@ -1,11 +1,4 @@
-import {
-  action,
-  atom,
-  effect,
-  onEvent,
-  reatomBoolean,
-  withAsync,
-} from '@reatom/core'
+import { action, atom, reatomBoolean, withAsync } from '@reatom/core'
 
 import { api } from '@/common/api'
 
@@ -22,6 +15,39 @@ export const readAnswerVisible = reatomBoolean(false, 'readAnswerVisible')
 
 const isOpeningReadQuestion = atom(false, 'isOpeningReadQuestion')
 
+/**
+ * Page layer consumes this to navigate (modules must not import routes).
+ * - `{ type: 'question', questionId }` → `/questions/:id`
+ * - `{ type: 'list' }` → `/questions`
+ * - `null` → no pending request
+ */
+export type QuestionPathNavigationRequest =
+  | { type: 'question'; questionId: string }
+  | { type: 'list' }
+
+export const questionPathNavigationRequest =
+  atom<QuestionPathNavigationRequest | null>(
+    null,
+    'questionPathNavigationRequest',
+  )
+
+const requestQuestionPath = action((questionId: string) => {
+  questionPathNavigationRequest.set({
+    type: 'question',
+    questionId,
+  })
+}, 'requestQuestionPath')
+
+const requestQuestionsListPath = action(() => {
+  questionPathNavigationRequest.set({
+    type: 'list',
+  })
+}, 'requestQuestionsListPath')
+
+export const clearQuestionPathNavigationRequest = action(() => {
+  questionPathNavigationRequest.set(null)
+}, 'clearQuestionPathNavigationRequest')
+
 export const showReadAnswer = action(() => {
   readAnswerVisible.setTrue()
 }, 'showReadAnswer')
@@ -30,6 +56,18 @@ export const clearReadQuestion = action(() => {
   readQuestion.set(null)
   readAnswerVisible.setFalse()
 }, 'clearReadQuestion')
+
+/** Set the read view from an already-loaded bank item (sidebar click, no extra fetch). */
+export const showQuestionFromBank = action((question: Question) => {
+  isOpeningReadQuestion.set(true)
+
+  try {
+    readQuestion.set(question)
+    readAnswerVisible.setFalse()
+  } finally {
+    isOpeningReadQuestion.set(false)
+  }
+}, 'showQuestionFromBank')
 
 /** Show a newly created question on home when nothing is displayed yet. */
 export const adoptReadQuestionIfEmpty = action((question: Question) => {
@@ -42,7 +80,7 @@ export const adoptReadQuestionIfEmpty = action((question: Question) => {
   readAnswerVisible.setFalse()
 }, 'adoptReadQuestionIfEmpty')
 
-/** Show this question in the read view (skips the next hydration overwrite). */
+/** Show this question and ask the page to open its path. */
 export const showCreatedReadQuestion = action((question: Question) => {
   isOpeningReadQuestion.set(true)
 
@@ -50,6 +88,8 @@ export const showCreatedReadQuestion = action((question: Question) => {
     readQuestion.set(question)
 
     readAnswerVisible.setFalse()
+
+    requestQuestionPath(question.id)
   } finally {
     isOpeningReadQuestion.set(false)
   }
@@ -69,13 +109,41 @@ export const hydrateReadQuestionFromPayload = action(
       return
     }
 
-    readQuestion.set(hydrationPayload.randomQuestion)
+    readQuestion.set(hydrationPayload.currentQuestion)
 
     readAnswerVisible.setFalse()
   },
   'hydrateReadQuestionFromPayload',
 )
 
+/** Fetch a random question id without updating read state (page navigates by id). */
+export const loadRandomQuestionId = action(
+  async (excludeQuestionId?: string): Promise<string | null> => {
+    const response = excludeQuestionId
+      ? await api.questions.random.$get({
+          query: {
+            exclude: excludeQuestionId,
+          },
+        })
+      : await api.questions.random.$get()
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null
+      }
+
+      throw new Error('Failed to load question')
+    }
+
+    const responsePayload = await response.json()
+    const question = responsePayload.question as Question
+
+    return question.id
+  },
+  'loadRandomQuestionId',
+).extend(withAsync())
+
+/** Fetch a random question and ask the page to open its path (e.g. delete fallback). */
 export const fetchRandomQuestion = action(
   async (excludeQuestionId?: string) => {
     const response = excludeQuestionId
@@ -89,6 +157,7 @@ export const fetchRandomQuestion = action(
     if (!response.ok) {
       if (response.status === 404) {
         clearReadQuestion()
+        requestQuestionsListPath()
 
         return null
       }
@@ -102,6 +171,8 @@ export const fetchRandomQuestion = action(
     readQuestion.set(question)
 
     readAnswerVisible.setFalse()
+
+    requestQuestionPath(question.id)
 
     return question
   },
@@ -139,12 +210,6 @@ export const selectReadQuestion = action(async (questionId: string) => {
   await fetchQuestionById(questionId)
 }, 'selectReadQuestion')
 
-export const pickReadQuestion = action(async () => {
-  const excludeQuestionId = readQuestion()?.id
-
-  await fetchRandomQuestion(excludeQuestionId)
-}, 'pickReadQuestion')
-
 /** Select a question for reading (skips the next hydration overwrite). */
 export const openReadQuestion = action(async (questionId: string) => {
   isOpeningReadQuestion.set(true)
@@ -164,6 +229,8 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
   clearReadQuestion()
 
   if (questions().length === 0) {
+    requestQuestionsListPath()
+
     return
   }
 
@@ -171,43 +238,6 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
     await fetchRandomQuestion()
   } catch {
     clearReadQuestion()
+    requestQuestionsListPath()
   }
 }, 'clearReadQuestionIfId')
-
-// Enter: show answer first; after answer is visible, go to the next question.
-// Active only while a question is loaded (page layer clears it when leaving).
-effect(() => {
-  if (!readQuestion()) {
-    return
-  }
-
-  onEvent(window, 'keydown', (keyboardEvent) => {
-    if (keyboardEvent.key !== 'Enter' || keyboardEvent.repeat) {
-      return
-    }
-
-    // Let the focused button handle Enter via its own click.
-    if (keyboardEvent.target instanceof HTMLButtonElement) {
-      return
-    }
-
-    if (
-      keyboardEvent.target instanceof HTMLElement &&
-      (keyboardEvent.target.tagName === 'INPUT' ||
-        keyboardEvent.target.tagName === 'TEXTAREA' ||
-        keyboardEvent.target.isContentEditable)
-    ) {
-      return
-    }
-
-    keyboardEvent.preventDefault()
-
-    if (!readAnswerVisible()) {
-      showReadAnswer()
-
-      return
-    }
-
-    void pickReadQuestion()
-  })
-}, 'readQuestionOnEnter')

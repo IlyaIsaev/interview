@@ -15,7 +15,6 @@ import { ItemActions } from '@/common/components/ui/item'
 
 import { CreateQuestionButton, CreateQuestionDialog } from '../modules/create'
 import { DeleteQuestionButton, DeleteQuestionDialog } from '../modules/delete'
-import { selectReadQuestion } from '../modules/read'
 import { UpdateQuestionButton, UpdateQuestionDialog } from '../modules/update'
 import type { Question } from '../model/questions'
 
@@ -23,12 +22,14 @@ type QuestionsSidebarProps = {
   questions: Question[]
   isLoading: boolean
   error?: Error
+  onQuestionSelect: (questionId: string) => void
 }
 
 export function QuestionsSidebar({
   questions,
   isLoading,
   error,
+  onQuestionSelect,
 }: QuestionsSidebarProps) {
   return (
     <Sidebar>
@@ -66,7 +67,7 @@ export function QuestionsSidebar({
                       title={question.question}
                       className="pr-14"
                       onClick={wrap(() => {
-                        void selectReadQuestion(question.id)
+                        onQuestionSelect(question.id)
                       })}
                     >
                       <span>{question.question}</span>

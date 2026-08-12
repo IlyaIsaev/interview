@@ -16,7 +16,7 @@ export type Question = {
 /** Snapshot used to hydrate the questions bank and current read question. */
 export type QuestionsHydrationPayload = {
   questions: Question[]
-  randomQuestion: Question | null
+  currentQuestion: Question | null
 }
 
 /** Questions bank for the current auth mode (hydrated from loaders / mutations). */

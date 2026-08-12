@@ -6,9 +6,16 @@ import { isSessionPending } from '@/common/auth'
 import { Toaster } from '@/common/components/ui/sonner'
 import { Spinner } from '@/common/components/ui/spinner'
 import { TooltipProvider } from '@/common/components/ui/tooltip'
-import { homeRoute, signInRoute, signUpRoute } from '@/common/routes'
+import {
+  homeRoute,
+  questionRoute,
+  questionsRoute,
+  signInRoute,
+  signUpRoute,
+} from '@/common/routes'
 
-const HomePage = lazy(() => import('./pages/home'))
+import HomePage from './pages/home'
+import QuestionsPage from './pages/questions'
 
 const SignInPage = lazy(() => import('./pages/sign-in'))
 
@@ -71,11 +78,13 @@ const App = reatomComponent(() => {
     )
   }
 
+  const isQuestionsShellActive =
+    questionsRoute() !== null || questionRoute() !== null
+
   return (
     <TooltipProvider>
-      <Suspense fallback={<FullPageFallback />}>
-        {homeRoute.exact() ? <HomePage /> : null}
-      </Suspense>
+      {homeRoute.exact() ? <HomePage /> : null}
+      {isQuestionsShellActive ? <QuestionsPage /> : null}
       <Toaster />
     </TooltipProvider>
   )
