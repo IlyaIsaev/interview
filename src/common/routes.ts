@@ -130,12 +130,21 @@ export const questionRoute = reatomRoute(
     },
     loader: async ({ questionId }): Promise<QuestionsLoaderData> => {
       const questionBank = await loadQuestionBank()
-      const questionFromBank =
-        questionBank.find((question) => question.id === questionId) ?? null
+      const isUrlQuestionInBank = questionBank.some(
+        (question) => question.id === questionId,
+      )
+      const resolvedQuestionId = isUrlQuestionInBank
+        ? questionId
+        : (questionBank[0]?.id ?? null)
 
-      // Prefer bank (same data as sidebar); fall back to by-id only if missing.
-      const currentQuestion =
-        questionFromBank ?? (await loadQuestionById(questionId))
+      if (!resolvedQuestionId) {
+        return {
+          questions: questionBank,
+          currentQuestion: null,
+        }
+      }
+
+      const currentQuestion = await loadQuestionById(resolvedQuestionId)
 
       return {
         questions: questionBank,

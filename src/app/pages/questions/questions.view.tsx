@@ -61,15 +61,6 @@ export const QuestionsPage = reatomComponent(() => {
     )
   }
 
-  const urlQuestionId = questionRoute()?.questionId
-  const isQuestionMissing =
-    isLoaderReady &&
-    Boolean(urlQuestionId) &&
-    Boolean(loaderPayload) &&
-    loaderPayload?.currentQuestion === null &&
-    !loaderError &&
-    !currentReadQuestion
-
   return (
     <SidebarProvider defaultOpen={false}>
       <QuestionsSidebar
@@ -118,17 +109,8 @@ export const QuestionsPage = reatomComponent(() => {
             <p className="w-full text-center text-sm text-destructive">
               {loaderError.message || 'Failed to load questions'}
             </p>
-          ) : isQuestionMissing ? (
-            <p className="w-full text-center text-sm text-muted-foreground">
-              Question not found
-            </p>
           ) : currentReadQuestion || loaderPayload ? (
-            <ReadQuestion
-              onNextQuestion={wrap(() => {
-                void goToNextQuestion()
-              })}
-              isNextQuestionPending={goToNextQuestion.pending() > 0}
-            />
+            <ReadQuestion onNextQuestion={wrap(goToNextQuestion)} />
           ) : (
             <div className="flex w-full justify-center">
               <Spinner className="size-5" />

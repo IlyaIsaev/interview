@@ -19,6 +19,29 @@ export type QuestionsHydrationPayload = {
   currentQuestion: Question | null
 }
 
+/** Pick a random id from the bank, preferring anything other than `excludeQuestionId`. */
+export const pickRandomQuestionId = (
+  questionBank: readonly Question[],
+  excludeQuestionId?: string,
+): string | null => {
+  const candidateQuestionIds = questionBank
+    .filter((question) => question.id !== excludeQuestionId)
+    .map((question) => question.id)
+
+  const questionIdsToPickFrom =
+    candidateQuestionIds.length > 0
+      ? candidateQuestionIds
+      : questionBank.map((question) => question.id)
+
+  if (questionIdsToPickFrom.length === 0) {
+    return null
+  }
+
+  const randomIndex = Math.floor(Math.random() * questionIdsToPickFrom.length)
+
+  return questionIdsToPickFrom[randomIndex] ?? null
+}
+
 /** Questions bank for the current auth mode (hydrated from loaders / mutations). */
 export const questions = atom<Question[]>([], 'questions')
 

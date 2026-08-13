@@ -4,6 +4,7 @@ import { api } from '@/common/api'
 
 import {
   isQuestionsHydrationPayloadAlreadyApplied,
+  pickRandomQuestionId,
   questions,
   type Question,
   type QuestionsHydrationPayload,
@@ -116,69 +117,6 @@ export const hydrateReadQuestionFromPayload = action(
   'hydrateReadQuestionFromPayload',
 )
 
-/** Fetch a random question id without updating read state (page navigates by id). */
-export const loadRandomQuestionId = action(
-  async (excludeQuestionId?: string): Promise<string | null> => {
-    const response = excludeQuestionId
-      ? await api.questions.random.$get({
-          query: {
-            exclude: excludeQuestionId,
-          },
-        })
-      : await api.questions.random.$get()
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null
-      }
-
-      throw new Error('Failed to load question')
-    }
-
-    const responsePayload = await response.json()
-    const question = responsePayload.question as Question
-
-    return question.id
-  },
-  'loadRandomQuestionId',
-).extend(withAsync())
-
-/** Fetch a random question and ask the page to open its path (e.g. delete fallback). */
-export const fetchRandomQuestion = action(
-  async (excludeQuestionId?: string) => {
-    const response = excludeQuestionId
-      ? await api.questions.random.$get({
-          query: {
-            exclude: excludeQuestionId,
-          },
-        })
-      : await api.questions.random.$get()
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        clearReadQuestion()
-        requestQuestionsListPath()
-
-        return null
-      }
-
-      throw new Error('Failed to load question')
-    }
-
-    const responsePayload = await response.json()
-    const question = responsePayload.question as Question
-
-    readQuestion.set(question)
-
-    readAnswerVisible.setFalse()
-
-    requestQuestionPath(question.id)
-
-    return question
-  },
-  'fetchRandomQuestion',
-).extend(withAsync())
-
 export const fetchQuestionById = action(async (questionId: string) => {
   const response = await api.questions[':id'].$get({
     param: {
@@ -228,14 +166,24 @@ export const clearReadQuestionIfId = action(async (questionId: string) => {
 
   clearReadQuestion()
 
-  if (questions().length === 0) {
+  const nextQuestionId = pickRandomQuestionId(questions())
+
+  if (!nextQuestionId) {
     requestQuestionsListPath()
 
     return
   }
 
   try {
-    await fetchRandomQuestion()
+    const loadedQuestion = await fetchQuestionById(nextQuestionId)
+
+    if (!loadedQuestion) {
+      requestQuestionsListPath()
+
+      return
+    }
+
+    requestQuestionPath(nextQuestionId)
   } catch {
     clearReadQuestion()
     requestQuestionsListPath()

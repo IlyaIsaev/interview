@@ -16,6 +16,7 @@ import { ItemActions } from '@/common/components/ui/item'
 
 import { CreateQuestionButton, CreateQuestionDialog } from '../modules/create'
 import { DeleteQuestionButton, DeleteQuestionDialog } from '../modules/delete'
+import { readQuestion } from '../modules/read'
 import {
   QuestionsSearchField,
   questionsSearchError,
@@ -39,6 +40,7 @@ export const QuestionsSidebar = reatomComponent(
     const isSearchPending = searchQuestions.pending() > 0
     const searchError = questionsSearchError()
     const questionBank = questions()
+    const currentReadQuestionId = readQuestion()?.id
 
     const sidebarQuestions: Question[] =
       searchResults !== null ? searchResults : questionBank
@@ -80,24 +82,33 @@ export const QuestionsSidebar = reatomComponent(
 
               {sidebarQuestions.length > 0 ? (
                 <SidebarMenu>
-                  {sidebarQuestions.map((question) => (
-                    <SidebarMenuItem key={question.id}>
-                      <SidebarMenuButton
-                        type="button"
-                        title={question.question}
-                        className="pr-14"
-                        onClick={wrap(() => {
-                          onQuestionSelect(question.id)
-                        })}
-                      >
-                        <span>{question.question}</span>
-                      </SidebarMenuButton>
-                      <ItemActions className="absolute top-1 right-1 z-10 gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover/menu-item:opacity-100 md:group-focus-within/menu-item:opacity-100">
-                        <UpdateQuestionButton questionId={question.id} />
-                        <DeleteQuestionButton questionId={question.id} />
-                      </ItemActions>
-                    </SidebarMenuItem>
-                  ))}
+                  {sidebarQuestions.map((question) => {
+                    const isCurrentReadQuestion =
+                      question.id === currentReadQuestionId
+
+                    return (
+                      <SidebarMenuItem key={question.id}>
+                        <SidebarMenuButton
+                          type="button"
+                          title={question.question}
+                          className="pr-14"
+                          isActive={isCurrentReadQuestion}
+                          aria-current={
+                            isCurrentReadQuestion ? 'page' : undefined
+                          }
+                          onClick={wrap(() => {
+                            onQuestionSelect(question.id)
+                          })}
+                        >
+                          <span>{question.question}</span>
+                        </SidebarMenuButton>
+                        <ItemActions className="absolute top-1 right-1 z-10 gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover/menu-item:opacity-100 md:group-focus-within/menu-item:opacity-100">
+                          <UpdateQuestionButton questionId={question.id} />
+                          <DeleteQuestionButton questionId={question.id} />
+                        </ItemActions>
+                      </SidebarMenuItem>
+                    )
+                  })}
                 </SidebarMenu>
               ) : null}
             </SidebarGroupContent>
