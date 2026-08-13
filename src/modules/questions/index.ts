@@ -83,6 +83,8 @@ export {
 
 export { hydrateQuestionsSession } from './model/hydrate-questions'
 
+export { isQuestionsSidebarOpen } from './model/sidebar-open'
+
 export {
   canCreateQuestion,
   DEMO_QUESTIONS_LIMIT,

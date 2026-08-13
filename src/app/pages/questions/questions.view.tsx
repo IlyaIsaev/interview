@@ -16,6 +16,7 @@ import {
   signInRoute,
 } from '@/common/routes'
 import {
+  isQuestionsSidebarOpen,
   questions,
   QuestionsSidebar,
   ReadQuestion,
@@ -74,7 +75,10 @@ export const QuestionsPage = reatomComponent(() => {
     !currentReadQuestion
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider
+      open={isQuestionsSidebarOpen()}
+      onOpenChange={wrap(isQuestionsSidebarOpen.set)}
+    >
       <QuestionsSidebar onQuestionSelect={wrap(navigateToQuestion)} />
       <SidebarInset>
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
