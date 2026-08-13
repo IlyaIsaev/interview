@@ -38,8 +38,9 @@ export const user = computed(() => session().data?.user ?? null, 'user')
 /** Whether a user is currently logged in. */
 export const isLoggedIn = computed(() => user() !== null, 'isLoggedIn')
 
-/** Whether the session is still loading. */
-export const isSessionPending = computed(
-  () => session().isPending,
-  'isSessionPending',
-)
+/** Whether the initial session is still loading (not a background refetch). */
+export const isSessionPending = computed(() => {
+  const sessionState = session()
+
+  return sessionState.isPending && !sessionState.isRefetching
+}, 'isSessionPending')
