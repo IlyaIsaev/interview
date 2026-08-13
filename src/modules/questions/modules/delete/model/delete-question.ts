@@ -8,7 +8,7 @@ import {
 } from '@/common/lib/error-message'
 
 import type { Question } from '../../../model/questions'
-import { removeQuestion } from '../../../model/questions'
+import { loadQuestionBank, removeQuestion } from '../../../model/questions'
 import { clearReadQuestionIfId } from '../../read'
 
 export const deleteQuestionId = atom<string | null>(null, 'deleteQuestionId')
@@ -110,6 +110,12 @@ export const deleteQuestion = action(async () => {
     const deletedQuestionTitle = questionToDelete?.question ?? 'Question'
 
     removeQuestion(questionId)
+
+    try {
+      await loadQuestionBank()
+    } catch {
+      // Delete succeeded; the sidebar will retry on the next open.
+    }
 
     await clearReadQuestionIfId(questionId)
 

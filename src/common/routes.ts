@@ -5,9 +5,8 @@ import { isLoggedIn, isSessionPending } from '@/common/auth'
 import type { Question, QuestionsHydrationPayload } from '@/modules/questions'
 
 export type HomeRedirectLoaderData = {
-  questions: Question[]
-  /** First item in the bank (sidebar order); used for open-app redirect. */
-  firstQuestion: Question | null
+  /** Random bank question for open-app redirect; null when the bank is empty. */
+  randomQuestion: Question | null
 }
 
 export type QuestionsLoaderData = QuestionsHydrationPayload
@@ -25,18 +24,6 @@ const getAuthBankModeParams = (): AuthBankModeParams | null => {
   return {
     mode: isLoggedIn() ? 'personal' : 'demo',
   }
-}
-
-const loadQuestionBank = async (): Promise<Question[]> => {
-  const response = await api.questions.$get()
-
-  if (!response.ok) {
-    throw new Error('Failed to load questions')
-  }
-
-  const payload = await response.json()
-
-  return payload.questions as Question[]
 }
 
 const loadQuestionById = async (
@@ -61,8 +48,32 @@ const loadQuestionById = async (
   return payload.question as Question
 }
 
+export const loadRandomQuestion = async (
+  excludeQuestionId?: string,
+): Promise<Question | null> => {
+  const response = excludeQuestionId
+    ? await api.questions.random.$get({
+        query: {
+          exclude: excludeQuestionId,
+        },
+      })
+    : await api.questions.random.$get()
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return null
+    }
+
+    throw new Error('Failed to load question')
+  }
+
+  const payload = await response.json()
+
+  return payload.question as Question
+}
+
 /**
- * Root path: no UI. Loader takes the first bank question so the page can redirect
+ * Root path: no UI. Loader takes a random question so the page can redirect
  * to `/questions/:id` (or `/questions` when the bank is empty).
  */
 export const homeRoute = reatomRoute(
@@ -70,12 +81,10 @@ export const homeRoute = reatomRoute(
     path: '',
     params: getAuthBankModeParams,
     loader: async (): Promise<HomeRedirectLoaderData> => {
-      const questionBank = await loadQuestionBank()
-      const firstQuestion = questionBank[0] ?? null
+      const randomQuestion = await loadRandomQuestion()
 
       return {
-        questions: questionBank,
-        firstQuestion,
+        randomQuestion,
       }
     },
   },
@@ -91,11 +100,10 @@ export const questionsRoute = reatomRoute(
     path: 'questions',
     params: getAuthBankModeParams,
     loader: async (): Promise<QuestionsLoaderData> => {
-      const questionBank = await loadQuestionBank()
+      const randomQuestion = await loadRandomQuestion()
 
       return {
-        questions: questionBank,
-        currentQuestion: questionBank[0] ?? null,
+        currentQuestion: randomQuestion,
       }
     },
   },
@@ -129,25 +137,9 @@ export const questionRoute = reatomRoute(
       }
     },
     loader: async ({ questionId }): Promise<QuestionsLoaderData> => {
-      const questionBank = await loadQuestionBank()
-      const isUrlQuestionInBank = questionBank.some(
-        (question) => question.id === questionId,
-      )
-      const resolvedQuestionId = isUrlQuestionInBank
-        ? questionId
-        : (questionBank[0]?.id ?? null)
-
-      if (!resolvedQuestionId) {
-        return {
-          questions: questionBank,
-          currentQuestion: null,
-        }
-      }
-
-      const currentQuestion = await loadQuestionById(resolvedQuestionId)
+      const currentQuestion = await loadQuestionById(questionId)
 
       return {
-        questions: questionBank,
         currentQuestion,
       }
     },

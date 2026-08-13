@@ -1,5 +1,6 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
+import { useEffect } from 'react'
 
 import {
   Sidebar,
@@ -10,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/common/components/ui/sidebar'
 import { Spinner } from '@/common/components/ui/spinner'
 import { ItemActions } from '@/common/components/ui/item'
@@ -25,29 +27,45 @@ import {
   searchQuestions,
 } from '../modules/search'
 import { UpdateQuestionButton, UpdateQuestionDialog } from '../modules/update'
-import { questions, type Question } from '../model/questions'
+import {
+  loadQuestionBank,
+  questions,
+  questionsError,
+  type Question,
+} from '../model/questions'
 
 type QuestionsSidebarProps = {
-  isLoading: boolean
-  error?: Error
   onQuestionSelect: (questionId: string) => void
 }
 
 export const QuestionsSidebar = reatomComponent(
-  ({ isLoading, error, onQuestionSelect }: QuestionsSidebarProps) => {
+  ({ onQuestionSelect }: QuestionsSidebarProps) => {
+    const { open, openMobile, isMobile } = useSidebar()
+    const isSidebarOpen = isMobile ? openMobile : open
+
+    useEffect(() => {
+      if (!isSidebarOpen) {
+        return
+      }
+
+      void loadQuestionBank()
+    }, [isSidebarOpen])
+
     const searchResults = questionsSearchResults()
     const isSearchActive = questionsSearchInput().trim().length > 0
     const isSearchPending = searchQuestions.pending() > 0
     const searchError = questionsSearchError()
     const questionBank = questions()
     const currentReadQuestionId = readQuestion()?.id
+    const isBankLoading = loadQuestionBank.pending() > 0
+    const bankError = questionsError()
 
     const sidebarQuestions: Question[] =
       searchResults !== null ? searchResults : questionBank
 
     const isListLoading =
-      isSearchPending || (isLoading && sidebarQuestions.length === 0)
-    const listError = isSearchActive ? searchError : error
+      isSearchPending || (isBankLoading && sidebarQuestions.length === 0)
+    const listError = isSearchActive ? searchError : bankError
 
     return (
       <Sidebar>

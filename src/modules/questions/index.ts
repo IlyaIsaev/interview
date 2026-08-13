@@ -72,14 +72,15 @@ export {
   canCreateQuestion,
   DEMO_QUESTIONS_LIMIT,
   demoQuestionsLimitMessage,
-  hydrateQuestionsFromPayload,
   isQuestionsLoaded,
+  loadQuestionBank,
   pickRandomQuestionId,
   prependQuestion,
   questions,
   questionsError,
   removeQuestion,
   replaceQuestion,
+  resetQuestionBank,
   resetQuestionsHydration,
 } from './model/questions'
 

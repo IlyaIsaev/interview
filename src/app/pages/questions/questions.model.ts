@@ -1,15 +1,21 @@
-import { action, effect, onEvent } from '@reatom/core'
+import { action, effect, onEvent, withAsync } from '@reatom/core'
 
-import { questionRoute, questionsRoute } from '@/common/routes'
+import { isLoggedIn } from '@/common/auth'
+import {
+  loadRandomQuestion,
+  questionRoute,
+  questionsRoute,
+} from '@/common/routes'
 import {
   clearQuestionPathNavigationRequest,
   clearReadQuestion,
   hydrateQuestionsSession,
-  pickRandomQuestionId,
+  isQuestionsLoaded,
   questionPathNavigationRequest,
   questions,
   readAnswerVisible,
   readQuestion,
+  resetQuestionBank,
   resetQuestionsHydration,
   resetQuestionsSearch,
   showQuestionFromBank,
@@ -19,8 +25,32 @@ import {
 const isQuestionsShellActive = () =>
   questionsRoute() !== null || questionRoute() !== null
 
+let lastQuestionsShellAuthMode: 'demo' | 'personal' | null = null
+
+const hasLoadedBankWithAtMostOneQuestion = () =>
+  isQuestionsLoaded() && questions().length <= 1
+
+effect(() => {
+  if (!isQuestionsShellActive()) {
+    lastQuestionsShellAuthMode = null
+
+    return
+  }
+
+  const currentAuthMode = isLoggedIn() ? 'personal' : 'demo'
+
+  if (
+    lastQuestionsShellAuthMode !== null &&
+    lastQuestionsShellAuthMode !== currentAuthMode
+  ) {
+    resetQuestionBank()
+  }
+
+  lastQuestionsShellAuthMode = currentAuthMode
+}, 'questionsPageResetBankOnAuthModeChange')
+
 /**
- * Bare `/questions` with a non-empty bank: send the user to the first list question.
+ * Bare `/questions` with a random question: send the user to that question.
  */
 effect(() => {
   if (!questionsRoute.exact()) {
@@ -46,39 +76,6 @@ effect(() => {
 }, 'questionsIndexRedirectToQuestion')
 
 /**
- * `/questions/:id` whose id is not in this user's bank: replace with the
- * question the loader actually loaded (first bank item).
- */
-effect(() => {
-  if (!questionRoute.exact()) {
-    return
-  }
-
-  if (!questionRoute.loader.ready()) {
-    return
-  }
-
-  const urlQuestionId = questionRoute()?.questionId
-  const questionPayload = questionRoute.loader.data()
-  const resolvedQuestion = questionPayload?.currentQuestion
-
-  if (!urlQuestionId || !resolvedQuestion) {
-    return
-  }
-
-  if (resolvedQuestion.id === urlQuestionId) {
-    return
-  }
-
-  questionRoute.go(
-    {
-      questionId: resolvedQuestion.id,
-    },
-    true,
-  )
-}, 'questionRouteUnknownIdRedirectToResolved')
-
-/**
  * Bridge the active route loader into the questions module.
  * Only one of questionsRoute / questionRoute matches a given URL (siblings).
  */
@@ -100,15 +97,9 @@ effect(() => {
     }
 
     // Ignore stale loader payload while a newer navigation is in flight.
-    // Unknown URL ids are not in the bank — that mismatch is a fallback, not stale.
-    const isUrlQuestionInBank = loaderPayload.questions.some(
-      (question) => question.id === urlQuestionId,
-    )
-
     if (
       loaderPayload.currentQuestion &&
-      loaderPayload.currentQuestion.id !== urlQuestionId &&
-      isUrlQuestionInBank
+      loaderPayload.currentQuestion.id !== urlQuestionId
     ) {
       return
     }
@@ -178,22 +169,30 @@ export const navigateToQuestion = action((questionId: string) => {
   })
 }, 'navigateToQuestion')
 
-/** Pick a random bank id (not the current one), then open `/questions/:id`. */
-export const goToNextQuestion = action(() => {
-  if (questions().length <= 1) {
+/** Load a random question (not the current one), then open `/questions/:id`. */
+export const goToNextQuestion = action(async () => {
+  if (hasLoadedBankWithAtMostOneQuestion()) {
     return
   }
 
   const excludeQuestionId = questionRoute()?.questionId ?? readQuestion()?.id
 
-  const nextQuestionId = pickRandomQuestionId(questions(), excludeQuestionId)
+  const randomQuestion = await loadRandomQuestion(excludeQuestionId)
 
-  if (!nextQuestionId) {
+  if (!randomQuestion) {
     return
   }
 
-  navigateToQuestion(nextQuestionId)
-}, 'goToNextQuestion')
+  showQuestionFromBank(randomQuestion)
+
+  if (questionRoute()?.questionId === randomQuestion.id) {
+    return
+  }
+
+  questionRoute.go({
+    questionId: randomQuestion.id,
+  })
+}, 'goToNextQuestion').extend(withAsync())
 
 // Enter: show answer first; after answer is visible, go to the next question.
 effect(() => {
@@ -228,10 +227,13 @@ effect(() => {
       return
     }
 
-    if (questions().length <= 1) {
+    if (
+      hasLoadedBankWithAtMostOneQuestion() ||
+      goToNextQuestion.pending() > 0
+    ) {
       return
     }
 
-    goToNextQuestion()
+    void goToNextQuestion()
   })
 }, 'questionsPageOnEnter')

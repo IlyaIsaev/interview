@@ -3,7 +3,7 @@ import { effect } from '@reatom/core'
 import { homeRoute, questionRoute, questionsRoute } from '@/common/routes'
 
 /**
- * `/` is empty: redirect into the questions flow with the first list question,
+ * `/` is empty: redirect into the questions flow with a random question,
  * or to `/questions` when the bank is empty.
  */
 effect(() => {
@@ -21,10 +21,10 @@ effect(() => {
     return
   }
 
-  if (redirectPayload.firstQuestion) {
+  if (redirectPayload.randomQuestion) {
     questionRoute.go(
       {
-        questionId: redirectPayload.firstQuestion.id,
+        questionId: redirectPayload.randomQuestion.id,
       },
       true,
     )

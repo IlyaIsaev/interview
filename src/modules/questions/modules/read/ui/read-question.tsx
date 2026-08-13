@@ -12,7 +12,7 @@ import {
 } from '@/common/components/ui/empty'
 import { Spinner } from '@/common/components/ui/spinner'
 
-import { questions } from '../../../model/questions'
+import { isQuestionsLoaded, questions } from '../../../model/questions'
 import { openCreateQuestionDialog } from '../../create'
 import {
   fetchQuestionById,
@@ -32,7 +32,7 @@ export const ReadQuestion = reatomComponent(
     const isQuestionLoading =
       isNextQuestionPending || fetchQuestionById.pending() > 0
     const isAnswerVisible = readAnswerVisible()
-    const hasNextQuestion = questions().length > 1
+    const hasNextQuestion = !isQuestionsLoaded() || questions().length > 1
 
     if (isQuestionLoading && !currentQuestion) {
       return (

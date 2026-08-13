@@ -1,5 +1,6 @@
-import { action, atom, computed } from '@reatom/core'
+import { action, atom, computed, withAsync } from '@reatom/core'
 
+import { api } from '@/common/api'
 import { isLoggedIn } from '@/common/auth'
 
 /** Max questions allowed per demo profile (logged-out mode). Keep in sync with worker. */
@@ -13,9 +14,8 @@ export type Question = {
   updatedAt: Date | string | number
 }
 
-/** Snapshot used to hydrate the questions bank and current read question. */
+/** Snapshot used to hydrate the current read question from a route loader. */
 export type QuestionsHydrationPayload = {
-  questions: Question[]
   currentQuestion: Question | null
 }
 
@@ -42,10 +42,10 @@ export const pickRandomQuestionId = (
   return questionIdsToPickFrom[randomIndex] ?? null
 }
 
-/** Questions bank for the current auth mode (hydrated from loaders / mutations). */
+/** Questions bank for the current auth mode (loaded on sidebar open / CUD). */
 export const questions = atom<Question[]>([], 'questions')
 
-/** True after hydration data has been applied (or a mutation refreshed the list). */
+/** True after the bank has been fetched (sidebar open or a mutation refresh). */
 export const isQuestionsLoaded = atom(false, 'isQuestionsLoaded')
 
 export const questionsError = atom<Error | undefined>(
@@ -60,29 +60,45 @@ export const isQuestionsHydrationPayloadAlreadyApplied = (
   hydrationPayload: QuestionsHydrationPayload,
 ) => lastHydratedQuestionsPayload === hydrationPayload
 
-const hydrateQuestions = action((questionBank: Question[]) => {
+export const markQuestionsHydrationPayloadApplied = action(
+  (hydrationPayload: QuestionsHydrationPayload) => {
+    lastHydratedQuestionsPayload = hydrationPayload
+  },
+  'markQuestionsHydrationPayloadApplied',
+)
+
+/** Fetch the full question bank. Used when the sidebar opens or after CUD. */
+export const loadQuestionBank = action(async () => {
+  const response = await api.questions.$get()
+
+  if (!response.ok) {
+    const loadError = new Error('Failed to load questions')
+
+    questionsError.set(loadError)
+
+    throw loadError
+  }
+
+  const payload = await response.json()
+  const questionBank = payload.questions as Question[]
+
   questions.set(questionBank)
   isQuestionsLoaded.set(true)
   questionsError.set(undefined)
-}, 'hydrateQuestions')
 
-/** Apply a hydration snapshot into questions atoms. */
-export const hydrateQuestionsFromPayload = action(
-  (hydrationPayload: QuestionsHydrationPayload) => {
-    if (lastHydratedQuestionsPayload === hydrationPayload) {
-      return
-    }
+  return questionBank
+}, 'loadQuestionBank').extend(withAsync())
 
-    hydrateQuestions(hydrationPayload.questions)
-    lastHydratedQuestionsPayload = hydrationPayload
-  },
-  'hydrateQuestionsFromPayload',
-)
+export const resetQuestionBank = action(() => {
+  questions.set([])
+  isQuestionsLoaded.set(false)
+  questionsError.set(undefined)
+}, 'resetQuestionBank')
 
-/** Clear hydration cache when the questions UI unmounts (e.g. leave home). */
+/** Clear hydration cache and bank when the questions UI unmounts. */
 export const resetQuestionsHydration = action(() => {
   lastHydratedQuestionsPayload = null
-  isQuestionsLoaded.set(false)
+  resetQuestionBank()
 }, 'resetQuestionsHydration')
 
 export const prependQuestion = action((question: Question) => {

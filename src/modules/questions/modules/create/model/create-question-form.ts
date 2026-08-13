@@ -8,7 +8,7 @@ import {
 } from '@/common/lib/error-message'
 
 import type { Question } from '../../../model/questions'
-import { prependQuestion } from '../../../model/questions'
+import { loadQuestionBank, prependQuestion } from '../../../model/questions'
 import { showCreatedReadQuestion } from '../../read'
 import { createQuestionDialogOpen } from './dialog-open'
 
@@ -54,6 +54,12 @@ export const createQuestionForm = reatomForm(
         const createdQuestionTitle = createdQuestion.question
 
         prependQuestion(createdQuestion)
+
+        try {
+          await loadQuestionBank()
+        } catch {
+          // Create succeeded; the sidebar will retry on the next open.
+        }
 
         createQuestionDialogOpen.setFalse()
 

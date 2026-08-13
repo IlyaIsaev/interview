@@ -1,21 +1,20 @@
 import { action } from '@reatom/core'
 
 import {
-  hydrateQuestionsFromPayload,
+  markQuestionsHydrationPayloadApplied,
   type QuestionsHydrationPayload,
 } from './questions'
 import { hydrateReadQuestionFromPayload } from '../modules/read/model/read-question'
 
 /**
- * Apply a questions hydration snapshot into bank + read atoms.
- * Called from the page layer when loader payload is available.
+ * Apply a route-loader snapshot into the read atom.
+ * Does not touch the question bank (loaded on sidebar open / CUD).
  */
 export const hydrateQuestionsSession = action(
   (hydrationPayload: QuestionsHydrationPayload) => {
-    // Read first: it checks isQuestionsHydrationPayloadAlreadyApplied before questions marks the payload applied.
     hydrateReadQuestionFromPayload(hydrationPayload)
 
-    hydrateQuestionsFromPayload(hydrationPayload)
+    markQuestionsHydrationPayloadApplied(hydrationPayload)
   },
   'hydrateQuestionsSession',
 )

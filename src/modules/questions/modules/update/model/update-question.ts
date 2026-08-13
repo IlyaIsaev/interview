@@ -8,7 +8,7 @@ import {
 } from '@/common/lib/error-message'
 
 import type { Question } from '../../../model/questions'
-import { replaceQuestion } from '../../../model/questions'
+import { loadQuestionBank, replaceQuestion } from '../../../model/questions'
 
 export const updateQuestionId = atom<string | null>(null, 'updateQuestionId')
 
@@ -67,6 +67,12 @@ export const updateQuestionForm = reatomForm(
         const updatedQuestionTitle = question.trim()
 
         replaceQuestion(updatedQuestion)
+
+        try {
+          await loadQuestionBank()
+        } catch {
+          // Update succeeded; the sidebar will retry on the next open.
+        }
 
         updateQuestionId.set(null)
 
