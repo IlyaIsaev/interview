@@ -18,7 +18,7 @@ import { ItemActions } from '@/common/components/ui/item'
 
 import { CreateQuestionButton, CreateQuestionDialog } from '../modules/create'
 import { DeleteQuestionButton, DeleteQuestionDialog } from '../modules/delete'
-import { readQuestion } from '../modules/read'
+import { shownQuestion } from '../model/shown-question'
 import {
   QuestionsSearchField,
   questionsSearchError,
@@ -56,7 +56,7 @@ export const QuestionsSidebar = reatomComponent(
     const isSearchPending = searchQuestions.pending() > 0
     const searchError = questionsSearchError()
     const questionBank = questions()
-    const currentReadQuestionId = readQuestion()?.id
+    const currentReadQuestionId = shownQuestion()?.id
     const isBankLoading = loadQuestionBank.pending() > 0
     const bankError = questionsError()
 

@@ -211,89 +211,53 @@ export const app = new Hono<QuestionsEnv>()
         : undefined
 
     if (user) {
-      const selectRandomQuestion = async (excludedId?: string) => {
-        if (excludedId) {
-          const [questionRow] = await db
-            .select()
+      const [questionRow] = excludedQuestionId
+        ? await db
+            .select({ id: questions.id })
             .from(questions)
-            .where(ne(questions.id, excludedId))
+            .where(ne(questions.id, excludedQuestionId))
+            .orderBy(sql`RANDOM()`)
+            .limit(1)
+        : await db
+            .select({ id: questions.id })
+            .from(questions)
             .orderBy(sql`RANDOM()`)
             .limit(1)
 
-          return questionRow
-        }
-
-        const [questionRow] = await db
-          .select()
-          .from(questions)
-          .orderBy(sql`RANDOM()`)
-          .limit(1)
-
-        return questionRow
+      if (!questionRow) {
+        return c.json({ error: 'No questions found' as const }, 404)
       }
 
-      const preferredQuestion = await selectRandomQuestion(excludedQuestionId)
-
-      if (preferredQuestion) {
-        return c.json({ question: preferredQuestion }, 200)
-      }
-
-      if (excludedQuestionId) {
-        const fallbackQuestion = await selectRandomQuestion()
-
-        if (fallbackQuestion) {
-          return c.json({ question: fallbackQuestion }, 200)
-        }
-      }
-
-      return c.json({ error: 'No questions found' as const }, 404)
+      return c.json({ questionId: questionRow.id }, 200)
     }
 
     const demoProfile = getResolvedDemoProfile(c.get('demoProfile'))
     const demoProfileId = demoProfile.id
 
-    const selectRandomDemoQuestion = async (excludedId?: string) => {
-      if (excludedId) {
-        const [questionRow] = await db
-          .select()
+    const [questionRow] = excludedQuestionId
+      ? await db
+          .select({ id: demoQuestions.id })
           .from(demoQuestions)
           .where(
             and(
               eq(demoQuestions.demoProfileId, demoProfileId),
-              ne(demoQuestions.id, excludedId),
+              ne(demoQuestions.id, excludedQuestionId),
             ),
           )
           .orderBy(sql`RANDOM()`)
           .limit(1)
+      : await db
+          .select({ id: demoQuestions.id })
+          .from(demoQuestions)
+          .where(eq(demoQuestions.demoProfileId, demoProfileId))
+          .orderBy(sql`RANDOM()`)
+          .limit(1)
 
-        return questionRow
-      }
-
-      const [questionRow] = await db
-        .select()
-        .from(demoQuestions)
-        .where(eq(demoQuestions.demoProfileId, demoProfileId))
-        .orderBy(sql`RANDOM()`)
-        .limit(1)
-
-      return questionRow
+    if (!questionRow) {
+      return c.json({ error: 'No questions found' as const }, 404)
     }
 
-    const preferredQuestion = await selectRandomDemoQuestion(excludedQuestionId)
-
-    if (preferredQuestion) {
-      return c.json({ question: toPublicQuestion(preferredQuestion) }, 200)
-    }
-
-    if (excludedQuestionId) {
-      const fallbackQuestion = await selectRandomDemoQuestion()
-
-      if (fallbackQuestion) {
-        return c.json({ question: toPublicQuestion(fallbackQuestion) }, 200)
-      }
-    }
-
-    return c.json({ error: 'No questions found' as const }, 404)
+    return c.json({ questionId: questionRow.id }, 200)
   })
   .get('/api/questions/:id', async (c) => {
     const user = c.get('user')

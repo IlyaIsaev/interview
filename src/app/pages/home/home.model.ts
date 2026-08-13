@@ -21,10 +21,10 @@ effect(() => {
     return
   }
 
-  if (redirectPayload.randomQuestion) {
+  if (redirectPayload.randomQuestionId) {
     questionRoute.go(
       {
-        questionId: redirectPayload.randomQuestion.id,
+        questionId: redirectPayload.randomQuestionId,
       },
       true,
     )

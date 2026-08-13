@@ -3,58 +3,32 @@ import { action, atom, reatomBoolean, withAsync } from '@reatom/core'
 import { api } from '@/common/api'
 
 import {
+  requestQuestionPath,
+  requestQuestionsListPath,
+} from '../../../model/question-path'
+import {
   isQuestionsHydrationPayloadAlreadyApplied,
   pickRandomQuestionId,
   questions,
   type Question,
   type QuestionsHydrationPayload,
 } from '../../../model/questions'
-
-export const readQuestion = atom<Question | null>(null, 'readQuestion')
+import {
+  clearShownQuestion,
+  setShownQuestion,
+  shownQuestion,
+} from '../../../model/shown-question'
 
 export const readAnswerVisible = reatomBoolean(false, 'readAnswerVisible')
 
 const isOpeningReadQuestion = atom(false, 'isOpeningReadQuestion')
-
-/**
- * Page layer consumes this to navigate (modules must not import routes).
- * - `{ type: 'question', questionId }` → `/questions/:id`
- * - `{ type: 'list' }` → `/questions`
- * - `null` → no pending request
- */
-export type QuestionPathNavigationRequest =
-  | { type: 'question'; questionId: string }
-  | { type: 'list' }
-
-export const questionPathNavigationRequest =
-  atom<QuestionPathNavigationRequest | null>(
-    null,
-    'questionPathNavigationRequest',
-  )
-
-const requestQuestionPath = action((questionId: string) => {
-  questionPathNavigationRequest.set({
-    type: 'question',
-    questionId,
-  })
-}, 'requestQuestionPath')
-
-const requestQuestionsListPath = action(() => {
-  questionPathNavigationRequest.set({
-    type: 'list',
-  })
-}, 'requestQuestionsListPath')
-
-export const clearQuestionPathNavigationRequest = action(() => {
-  questionPathNavigationRequest.set(null)
-}, 'clearQuestionPathNavigationRequest')
 
 export const showReadAnswer = action(() => {
   readAnswerVisible.setTrue()
 }, 'showReadAnswer')
 
 export const clearReadQuestion = action(() => {
-  readQuestion.set(null)
+  clearShownQuestion()
   readAnswerVisible.setFalse()
 }, 'clearReadQuestion')
 
@@ -63,7 +37,7 @@ export const showQuestionFromBank = action((question: Question) => {
   isOpeningReadQuestion.set(true)
 
   try {
-    readQuestion.set(question)
+    setShownQuestion(question)
     readAnswerVisible.setFalse()
   } finally {
     isOpeningReadQuestion.set(false)
@@ -72,11 +46,11 @@ export const showQuestionFromBank = action((question: Question) => {
 
 /** Show a newly created question on home when nothing is displayed yet. */
 export const adoptReadQuestionIfEmpty = action((question: Question) => {
-  if (readQuestion()) {
+  if (shownQuestion()) {
     return
   }
 
-  readQuestion.set(question)
+  setShownQuestion(question)
 
   readAnswerVisible.setFalse()
 }, 'adoptReadQuestionIfEmpty')
@@ -86,7 +60,7 @@ export const showCreatedReadQuestion = action((question: Question) => {
   isOpeningReadQuestion.set(true)
 
   try {
-    readQuestion.set(question)
+    setShownQuestion(question)
 
     readAnswerVisible.setFalse()
 
@@ -97,7 +71,7 @@ export const showCreatedReadQuestion = action((question: Question) => {
 }, 'showCreatedReadQuestion')
 
 /**
- * Apply hydration snapshot into the read atom.
+ * Apply hydration snapshot into the shown-question atom.
  * Skips when this payload was already applied so "Next" is not reset.
  */
 export const hydrateReadQuestionFromPayload = action(
@@ -110,7 +84,7 @@ export const hydrateReadQuestionFromPayload = action(
       return
     }
 
-    readQuestion.set(hydrationPayload.currentQuestion)
+    setShownQuestion(hydrationPayload.currentQuestion)
 
     readAnswerVisible.setFalse()
   },
@@ -137,7 +111,7 @@ export const fetchQuestionById = action(async (questionId: string) => {
   const responsePayload = await response.json()
   const question = responsePayload.question as Question
 
-  readQuestion.set(question)
+  setShownQuestion(question)
 
   readAnswerVisible.setFalse()
 
@@ -160,7 +134,7 @@ export const openReadQuestion = action(async (questionId: string) => {
 }, 'openReadQuestion')
 
 export const clearReadQuestionIfId = action(async (questionId: string) => {
-  if (readQuestion()?.id !== questionId) {
+  if (shownQuestion()?.id !== questionId) {
     return
   }
 

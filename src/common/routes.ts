@@ -1,12 +1,18 @@
 import { reatomRoute, urlAtom } from '@reatom/core'
+import { z } from 'zod'
 
 import { api } from '@/common/api'
 import { isLoggedIn, isSessionPending } from '@/common/auth'
 import type { Question, QuestionsHydrationPayload } from '@/modules/questions'
 
 export type HomeRedirectLoaderData = {
-  /** Random bank question for open-app redirect; null when the bank is empty. */
-  randomQuestion: Question | null
+  /** Random question id for open-app redirect; null when the bank is empty. */
+  randomQuestionId: string | null
+}
+
+export type QuestionsIndexLoaderData = {
+  /** Random question id to open; null when the bank is empty. */
+  randomQuestionId: string | null
 }
 
 export type QuestionsLoaderData = QuestionsHydrationPayload
@@ -14,6 +20,16 @@ export type QuestionsLoaderData = QuestionsHydrationPayload
 type AuthBankModeParams = {
   /** Auth bank mode — included so loaders re-run on sign-in / sign-out. */
   mode: 'demo' | 'personal'
+}
+
+const homePathnameSchema = z.literal('/')
+
+const questionsPathnameSchema = z.literal('/questions')
+
+const getNormalizedPathname = (): string => {
+  const pathname = urlAtom().pathname.replace(/\/+$/, '')
+
+  return pathname === '' ? '/' : pathname
 }
 
 const getAuthBankModeParams = (): AuthBankModeParams | null => {
@@ -24,6 +40,18 @@ const getAuthBankModeParams = (): AuthBankModeParams | null => {
   return {
     mode: isLoggedIn() ? 'personal' : 'demo',
   }
+}
+
+const getExactPathAuthBankModeParams = (
+  pathnameSchema: z.ZodType<string>,
+): AuthBankModeParams | null => {
+  const parsedPathname = pathnameSchema.safeParse(getNormalizedPathname())
+
+  if (!parsedPathname.success) {
+    return null
+  }
+
+  return getAuthBankModeParams()
 }
 
 const loadQuestionById = async (
@@ -48,9 +76,9 @@ const loadQuestionById = async (
   return payload.question as Question
 }
 
-export const loadRandomQuestion = async (
+export const loadRandomQuestionId = async (
   excludeQuestionId?: string,
-): Promise<Question | null> => {
+): Promise<string | null> => {
   const response = excludeQuestionId
     ? await api.questions.random.$get({
         query: {
@@ -69,7 +97,7 @@ export const loadRandomQuestion = async (
 
   const payload = await response.json()
 
-  return payload.question as Question
+  return payload.questionId
 }
 
 /**
@@ -79,12 +107,12 @@ export const loadRandomQuestion = async (
 export const homeRoute = reatomRoute(
   {
     path: '',
-    params: getAuthBankModeParams,
+    params: () => getExactPathAuthBankModeParams(homePathnameSchema),
     loader: async (): Promise<HomeRedirectLoaderData> => {
-      const randomQuestion = await loadRandomQuestion()
+      const randomQuestionId = await loadRandomQuestionId()
 
       return {
-        randomQuestion,
+        randomQuestionId,
       }
     },
   },
@@ -98,12 +126,12 @@ export const homeRoute = reatomRoute(
 export const questionsRoute = reatomRoute(
   {
     path: 'questions',
-    params: getAuthBankModeParams,
-    loader: async (): Promise<QuestionsLoaderData> => {
-      const randomQuestion = await loadRandomQuestion()
+    params: () => getExactPathAuthBankModeParams(questionsPathnameSchema),
+    loader: async (): Promise<QuestionsIndexLoaderData> => {
+      const randomQuestionId = await loadRandomQuestionId()
 
       return {
-        currentQuestion: randomQuestion,
+        randomQuestionId,
       }
     },
   },

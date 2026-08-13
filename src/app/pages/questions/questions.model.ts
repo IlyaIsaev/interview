@@ -1,34 +1,29 @@
-import { action, effect, onEvent, withAsync } from '@reatom/core'
+import { action, effect, onEvent } from '@reatom/core'
 
 import { isLoggedIn } from '@/common/auth'
+import { questionRoute, questionsRoute } from '@/common/routes'
 import {
-  loadRandomQuestion,
-  questionRoute,
-  questionsRoute,
-} from '@/common/routes'
-import {
+  canGoToNextQuestion,
   clearQuestionPathNavigationRequest,
   clearReadQuestion,
+  goToNextQuestion,
   hydrateQuestionsSession,
-  isQuestionsLoaded,
+  isNextQuestionPending,
   questionPathNavigationRequest,
   questions,
   readAnswerVisible,
-  readQuestion,
   resetQuestionBank,
   resetQuestionsHydration,
   resetQuestionsSearch,
   showQuestionFromBank,
   showReadAnswer,
+  shownQuestion,
 } from '@/modules/questions'
 
 const isQuestionsShellActive = () =>
   questionsRoute() !== null || questionRoute() !== null
 
 let lastQuestionsShellAuthMode: 'demo' | 'personal' | null = null
-
-const hasLoadedBankWithAtMostOneQuestion = () =>
-  isQuestionsLoaded() && questions().length <= 1
 
 effect(() => {
   if (!isQuestionsShellActive()) {
@@ -63,13 +58,13 @@ effect(() => {
 
   const questionsPayload = questionsRoute.loader.data()
 
-  if (!questionsPayload?.currentQuestion) {
+  if (!questionsPayload?.randomQuestionId) {
     return
   }
 
   questionRoute.go(
     {
-      questionId: questionsPayload.currentQuestion.id,
+      questionId: questionsPayload.randomQuestionId,
     },
     true,
   )
@@ -119,12 +114,18 @@ effect(() => {
     return
   }
 
-  hydrateQuestionsSession(questionsPayload)
+  if (questionsPayload.randomQuestionId) {
+    return
+  }
+
+  hydrateQuestionsSession({
+    currentQuestion: null,
+  })
 }, 'questionsPageSyncSession')
 
 /**
  * Module intents (create / delete) → path navigation.
- * Sidebar/Next call questionRoute.go directly.
+ * Sidebar calls questionRoute.go; Next/create/delete request a path.
  */
 effect(() => {
   if (!isQuestionsShellActive()) {
@@ -169,34 +170,9 @@ export const navigateToQuestion = action((questionId: string) => {
   })
 }, 'navigateToQuestion')
 
-/** Load a random question (not the current one), then open `/questions/:id`. */
-export const goToNextQuestion = action(async () => {
-  if (hasLoadedBankWithAtMostOneQuestion()) {
-    return
-  }
-
-  const excludeQuestionId = questionRoute()?.questionId ?? readQuestion()?.id
-
-  const randomQuestion = await loadRandomQuestion(excludeQuestionId)
-
-  if (!randomQuestion) {
-    return
-  }
-
-  showQuestionFromBank(randomQuestion)
-
-  if (questionRoute()?.questionId === randomQuestion.id) {
-    return
-  }
-
-  questionRoute.go({
-    questionId: randomQuestion.id,
-  })
-}, 'goToNextQuestion').extend(withAsync())
-
 // Enter: show answer first; after answer is visible, go to the next question.
 effect(() => {
-  if (!isQuestionsShellActive() || !readQuestion()) {
+  if (!isQuestionsShellActive() || !shownQuestion()) {
     return
   }
 
@@ -227,10 +203,7 @@ effect(() => {
       return
     }
 
-    if (
-      hasLoadedBankWithAtMostOneQuestion() ||
-      goToNextQuestion.pending() > 0
-    ) {
+    if (!canGoToNextQuestion() || isNextQuestionPending()) {
       return
     }
 

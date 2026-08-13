@@ -39,22 +39,37 @@ export {
 export {
   ReadQuestion,
   adoptReadQuestionIfEmpty,
-  clearQuestionPathNavigationRequest,
   clearReadQuestion,
   clearReadQuestionIfId,
   fetchQuestionById,
   hydrateReadQuestionFromPayload,
   openReadQuestion,
-  questionPathNavigationRequest,
   readAnswerVisible,
-  readQuestion,
   selectReadQuestion,
   showCreatedReadQuestion,
   showQuestionFromBank,
   showReadAnswer,
 } from './modules/read'
 
-export type { QuestionPathNavigationRequest } from './modules/read'
+export {
+  canGoToNextQuestion,
+  goToNextQuestion,
+  isNextQuestionPending,
+} from './modules/next'
+
+export {
+  clearQuestionPathNavigationRequest,
+  questionPathNavigationRequest,
+  requestQuestionPath,
+} from './model/question-path'
+
+export type { QuestionPathNavigationRequest } from './model/question-path'
+
+export {
+  clearShownQuestion,
+  setShownQuestion,
+  shownQuestion,
+} from './model/shown-question'
 
 export {
   QuestionsSearchField,

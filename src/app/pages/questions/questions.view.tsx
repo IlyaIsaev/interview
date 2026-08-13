@@ -18,11 +18,11 @@ import {
 import {
   questions,
   QuestionsSidebar,
-  readQuestion,
   ReadQuestion,
+  shownQuestion,
 } from '@/modules/questions'
 
-import { goToNextQuestion, navigateToQuestion } from './questions.model'
+import { navigateToQuestion } from './questions.model'
 
 const navigateToHome = action(() => {
   homeRoute.go()
@@ -37,21 +37,25 @@ export const QuestionsPage = reatomComponent(() => {
   }
 
   const isQuestionDetail = questionRoute.exact()
-  const activeLoader = isQuestionDetail
-    ? questionRoute.loader
-    : questionsRoute.loader
-
-  const loaderPayload = activeLoader.data()
-  const isLoaderReady = activeLoader.ready()
-  const loaderError = activeLoader.error()
-  const currentReadQuestion = readQuestion()
+  const questionLoaderPayload = questionRoute.loader.data()
+  const questionsIndexPayload = questionsRoute.loader.data()
+  const isLoaderReady = isQuestionDetail
+    ? questionRoute.loader.ready()
+    : questionsRoute.loader.ready()
+  const loaderError = isQuestionDetail
+    ? questionRoute.loader.error()
+    : questionsRoute.loader.error()
+  const hasLoaderPayload = isQuestionDetail
+    ? Boolean(questionLoaderPayload)
+    : Boolean(questionsIndexPayload)
+  const currentReadQuestion = shownQuestion()
   const questionBank = questions()
+  const isRedirectingToRandomQuestion =
+    !isQuestionDetail && Boolean(questionsIndexPayload?.randomQuestionId)
 
   // Keep shell visible during in-place navigations if we already have bank/read state.
   const hasShellContent =
-    questionBank.length > 0 ||
-    currentReadQuestion !== null ||
-    Boolean(loaderPayload)
+    questionBank.length > 0 || currentReadQuestion !== null || hasLoaderPayload
 
   if (!isLoaderReady && !hasShellContent) {
     return (
@@ -64,8 +68,8 @@ export const QuestionsPage = reatomComponent(() => {
   const isQuestionMissing =
     isQuestionDetail &&
     isLoaderReady &&
-    Boolean(loaderPayload) &&
-    loaderPayload?.currentQuestion === null &&
+    Boolean(questionLoaderPayload) &&
+    questionLoaderPayload?.currentQuestion === null &&
     !loaderError &&
     !currentReadQuestion
 
@@ -109,7 +113,7 @@ export const QuestionsPage = reatomComponent(() => {
           )}
         </header>
         <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-10">
-          {loaderError && !loaderPayload && !currentReadQuestion ? (
+          {loaderError && !hasLoaderPayload && !currentReadQuestion ? (
             <p className="w-full text-center text-sm text-destructive">
               {loaderError.message || 'Failed to load questions'}
             </p>
@@ -117,13 +121,13 @@ export const QuestionsPage = reatomComponent(() => {
             <p className="w-full text-center text-sm text-muted-foreground">
               Question not found
             </p>
-          ) : currentReadQuestion || loaderPayload ? (
-            <ReadQuestion
-              onNextQuestion={wrap(() => {
-                void goToNextQuestion()
-              })}
-              isNextQuestionPending={goToNextQuestion.pending() > 0}
-            />
+          ) : isRedirectingToRandomQuestion && !currentReadQuestion ? (
+            <div className="flex w-full justify-center">
+              <Spinner className="size-5" />
+            </div>
+          ) : currentReadQuestion ||
+            (hasLoaderPayload && !isRedirectingToRandomQuestion) ? (
+            <ReadQuestion />
           ) : (
             <div className="flex w-full justify-center">
               <Spinner className="size-5" />
