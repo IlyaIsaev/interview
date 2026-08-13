@@ -2,7 +2,8 @@ import { action, effect, wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { lazy, Suspense } from 'react'
 
-import { isSessionPending } from '@/common/auth'
+import { isLoggedIn, isSessionPending } from '@/common/auth'
+import { CookieConsent } from '@/common/components/ui/cookie-consent'
 import { Toaster } from '@/common/components/ui/sonner'
 import { Spinner } from '@/common/components/ui/spinner'
 import { TooltipProvider } from '@/common/components/ui/tooltip'
@@ -30,6 +31,30 @@ function FullPageFallback() {
 const navigateToHome = action(() => {
   homeRoute.go()
 }, 'navigateToHome')
+
+const declineCookieConsent = async () => {
+  try {
+    await fetch('/api/demo-profile', {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+  } catch {
+    // Leave even if the demo profile could not be deleted.
+  }
+
+  window.location.assign('https://www.google.com')
+}
+
+function GuestCookieConsent() {
+  return (
+    <CookieConsent
+      variant="mini"
+      onDeclineCallback={() => {
+        void declineCookieConsent()
+      }}
+    />
+  )
+}
 
 // Sign-up is disabled — send legacy /sign-up visits to sign-in (when guest).
 effect(() => {
@@ -74,6 +99,7 @@ const App = reatomComponent(() => {
           </main>
         </div>
         <Toaster />
+        <GuestCookieConsent />
       </TooltipProvider>
     )
   }
@@ -86,6 +112,7 @@ const App = reatomComponent(() => {
       {homeRoute.exact() ? <HomePage /> : null}
       {isQuestionsShellActive ? <QuestionsPage /> : null}
       <Toaster />
+      {isLoggedIn() ? null : <GuestCookieConsent />}
     </TooltipProvider>
   )
 }, 'App')

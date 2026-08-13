@@ -4,13 +4,18 @@ import type {
 } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
 
+import { createDb } from '@/db'
+
 import {
   app as authApp,
   createAuth,
   type AuthEnv,
   type AuthVariables,
 } from './auth'
-import { purgeExpiredDemoProfiles } from './demo-profile'
+import {
+  deleteDemoProfileForRequest,
+  purgeExpiredDemoProfiles,
+} from './demo-profile'
 import { app as questionsApp } from './questions'
 
 const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
@@ -28,6 +33,13 @@ const app = new Hono<{ Bindings: AuthEnv; Variables: AuthVariables }>()
     await next()
   })
   .get('/api/health', (c) => c.json({ ok: true as const }, 200))
+  .delete('/api/demo-profile', async (c) => {
+    const db = createDb(c.env.interview)
+
+    await deleteDemoProfileForRequest(c, db)
+
+    return c.body(null, 204)
+  })
   .route('/', authApp)
   .route('/', questionsApp)
 

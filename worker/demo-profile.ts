@@ -80,6 +80,31 @@ const deleteDemoProfileById = async (
   await db.delete(demoProfiles).where(eq(demoProfiles.id, demoProfileId))
 }
 
+const clearDemoProfileCookie = <E extends EnvWithInterviewBinding>(
+  c: Context<E>,
+) => {
+  deleteCookie(c, DEMO_PROFILE_COOKIE_NAME, {
+    path: '/',
+    secure: shouldUseSecureCookie(c.req.url),
+  })
+}
+
+/** Delete the current request's demo profile (if any) and clear its cookie. */
+export const deleteDemoProfileForRequest = async <
+  E extends EnvWithInterviewBinding,
+>(
+  c: Context<E>,
+  db: Database,
+): Promise<void> => {
+  const cookieDemoProfileId = getCookie(c, DEMO_PROFILE_COOKIE_NAME)
+
+  if (cookieDemoProfileId && isUuid(cookieDemoProfileId)) {
+    await deleteDemoProfileById(db, cookieDemoProfileId)
+  }
+
+  clearDemoProfileCookie(c)
+}
+
 /**
  * Resolve the demo profile for an unregistered visitor.
  * Creates a new profile + cookie when missing/invalid/expired.
