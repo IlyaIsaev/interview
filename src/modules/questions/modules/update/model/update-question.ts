@@ -9,6 +9,7 @@ import {
 
 import type { Question } from '../../../model/questions'
 import { loadQuestionBank, replaceQuestion } from '../../../model/questions'
+import { setShownQuestion, shownQuestion } from '../../../model/shown-question'
 
 export const updateQuestionId = atom<string | null>(null, 'updateQuestionId')
 
@@ -67,6 +68,10 @@ export const updateQuestionForm = reatomForm(
         const updatedQuestionTitle = question.trim()
 
         replaceQuestion(updatedQuestion)
+
+        if (shownQuestion()?.id === updatedQuestion.id) {
+          setShownQuestion(updatedQuestion)
+        }
 
         try {
           await loadQuestionBank()
