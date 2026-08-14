@@ -25,6 +25,7 @@
     "@base-ui/react": "^1.6.0",
     "@better-auth/drizzle-adapter": "^1.6.25",
     "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@reatom/core": "^1001.3.0",
     "@reatom/react": "^1001.0.1",
     "@tailwindcss/vite": "^4.3.3",

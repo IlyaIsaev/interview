@@ -63,7 +63,9 @@ export const QuestionsSidebar = reatomComponent(
     return (
       <Sidebar>
         <SidebarHeader className="h-12 shrink-0 flex-row items-center justify-between border-b px-4 py-0">
-          <h2 className="text-sm font-medium">Questions</h2>
+          <h2 className="text-xs font-normal tracking-[1.5px] text-muted-foreground uppercase">
+            Questions
+          </h2>
           {renderHeaderAction?.()}
         </SidebarHeader>
         <QuestionsSearchField />

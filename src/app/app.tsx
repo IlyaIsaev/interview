@@ -5,6 +5,7 @@ import { lazy, Suspense } from 'react'
 import { CookieConsent } from '@/common/ui/cookie-consent'
 import { Toaster } from '@/common/ui/sonner'
 import { Spinner } from '@/common/ui/spinner'
+import { ThemeToggle } from '@/common/ui/theme-toggle'
 import { TooltipProvider } from '@/common/ui/tooltip'
 import { isLoggedIn, isSessionPending } from '@/modules/auth'
 import {
@@ -86,11 +87,14 @@ export const App = reatomComponent(() => {
             <nav className="mx-auto flex h-12 w-full max-w-7xl items-center gap-3 px-4">
               <button
                 type="button"
-                className="text-sm font-medium"
+                className="text-ui font-medium tracking-wider uppercase"
                 onClick={wrap(navigateToHome)}
               >
                 Interview
               </button>
+              <div className="ml-auto">
+                <ThemeToggle />
+              </div>
             </nav>
           </header>
           <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-10">

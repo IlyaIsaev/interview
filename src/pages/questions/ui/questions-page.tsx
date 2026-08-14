@@ -8,6 +8,7 @@ import {
   SidebarTrigger,
 } from '@/common/ui/sidebar'
 import { Spinner } from '@/common/ui/spinner'
+import { ThemeToggle } from '@/common/ui/theme-toggle'
 import { isLoggedIn } from '@/modules/auth'
 import {
   canGoToNextQuestion,
@@ -73,32 +74,33 @@ const QuestionsPage = reatomComponent(() => {
           <SidebarTrigger className="-ml-1" />
           <button
             type="button"
-            className="text-lg font-semibold"
+            className="text-ui font-medium tracking-wider uppercase"
             onClick={wrap(navigateToHome)}
           >
             Interview
           </button>
-          {isLoggedIn() ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              onClick={wrap(signOutUser)}
-            >
-              Sign out
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              onClick={wrap(navigateToSignIn)}
-            >
-              Sign in
-            </Button>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            <ThemeToggle />
+            {isLoggedIn() ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={wrap(signOutUser)}
+              >
+                Sign out
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={wrap(navigateToSignIn)}
+              >
+                Sign in
+              </Button>
+            )}
+          </div>
         </header>
         <main className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-10">
           {questionsMain.kind === 'error' ? (

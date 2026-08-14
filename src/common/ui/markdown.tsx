@@ -108,7 +108,7 @@ function MarkdownContent({
       className={cn(
         'min-w-0 max-w-none break-words text-sm text-foreground',
         size === 'answer' &&
-          'font-charter font-light [&_h1]:text-3xl [&_h2]:text-2xl [&_h3]:text-xl [&_p]:text-xl [&_p]:leading-8 [&_ul]:text-xl [&_ul]:leading-8 [&_ol]:text-xl [&_ol]:leading-8 [&_li]:text-xl [&_li]:leading-8 [&_blockquote]:text-xl [&_blockquote]:leading-8 [&_table]:text-lg [&_code]:font-mono [&_code]:font-normal [&_code]:text-lg [&_pre]:font-mono [&_pre]:font-normal [&_pre]:text-lg',
+          '[&_h1]:text-3xl [&_h2]:text-2xl [&_h3]:text-xl [&_p]:text-xl [&_p]:leading-8 [&_ul]:text-xl [&_ul]:leading-8 [&_ol]:text-xl [&_ol]:leading-8 [&_li]:text-xl [&_li]:leading-8 [&_blockquote]:text-xl [&_blockquote]:leading-8 [&_table]:text-lg [&_code]:font-mono [&_code]:font-normal [&_code]:text-lg [&_pre]:font-mono [&_pre]:font-normal [&_pre]:text-lg',
         className,
       )}
     >
