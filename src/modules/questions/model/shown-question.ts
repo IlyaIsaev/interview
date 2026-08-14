@@ -1,6 +1,6 @@
 import { action, atom } from '@reatom/core'
 
-import type { Question } from './questions'
+import type { Question } from './question'
 
 /** Question currently shown in the read pane. */
 export const shownQuestion = atom<Question | null>(null, 'shownQuestion')

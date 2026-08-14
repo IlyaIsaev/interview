@@ -1,10 +1,8 @@
 import { action } from '@reatom/core'
 
-import {
-  markQuestionsHydrationPayloadApplied,
-  type QuestionsHydrationPayload,
-} from './questions'
-import { hydrateReadQuestionFromPayload } from '../modules/read/model/read-question'
+import { hydrateReadQuestionFromPayload } from '../modules/read'
+import type { QuestionsHydrationPayload } from './question'
+import { markQuestionsHydrationPayloadApplied } from './questions'
 
 /**
  * Apply a route-loader snapshot into the shown-question atom.

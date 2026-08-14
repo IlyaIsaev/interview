@@ -1,9 +1,9 @@
 import type { FieldAtom } from '@reatom/core'
 import { bindField, reatomComponent } from '@reatom/react'
 
-import { MarkdownContent } from '@/common/components/markdown'
-import { Field, FieldError, FieldLabel } from '@/common/components/ui/field'
-import { Textarea } from '@/common/components/ui/textarea'
+import { MarkdownContent } from '@/common/ui/markdown'
+import { Field, FieldError, FieldLabel } from '@/common/ui/field'
+import { Textarea } from '@/common/ui/textarea'
 import { cn } from '@/common/lib/utils'
 
 type MarkdownFieldProps = {
@@ -29,7 +29,10 @@ export const MarkdownField = reatomComponent(
     previewClassName,
   }: MarkdownFieldProps) => {
     const fieldBinding = bindField(field)
-    const hasValidationError = Boolean(fieldBinding.error)
+    const fieldError = field.validation().triggered
+      ? fieldBinding.error
+      : undefined
+    const hasValidationError = Boolean(fieldError)
     const markdown = fieldBinding.value ?? ''
 
     return (
@@ -70,7 +73,7 @@ export const MarkdownField = reatomComponent(
             )}
           </div>
         </div>
-        <FieldError>{fieldBinding.error}</FieldError>
+        <FieldError>{fieldError}</FieldError>
       </Field>
     )
   },

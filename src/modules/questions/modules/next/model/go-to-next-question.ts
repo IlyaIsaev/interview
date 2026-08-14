@@ -1,7 +1,6 @@
-import { action, atom, computed, effect, withAsync } from '@reatom/core'
+import { action, atom, computed, effect, withAsync, wrap } from '@reatom/core'
 
-import { api } from '@/common/api'
-
+import { fetchRandomQuestionId } from '../../../api/questions-api'
 import { requestQuestionPath } from '../../../model/question-path'
 import { isQuestionsLoaded, questions } from '../../../model/questions'
 import { shownQuestion } from '../../../model/shown-question'
@@ -22,28 +21,6 @@ const shownQuestionIdWhenNextRequested = atom<string | null>(
   'shownQuestionIdWhenNextRequested',
 )
 
-const loadRandomQuestionId = async (
-  excludeQuestionId: string,
-): Promise<string | null> => {
-  const response = await api.questions.random.$get({
-    query: {
-      exclude: excludeQuestionId,
-    },
-  })
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      return null
-    }
-
-    throw new Error('Failed to load question')
-  }
-
-  const payload = await response.json()
-
-  return payload.questionId
-}
-
 export const goToNextQuestion = action(async () => {
   if (!canGoToNextQuestion()) {
     return
@@ -55,7 +32,7 @@ export const goToNextQuestion = action(async () => {
     return
   }
 
-  const nextQuestionId = await loadRandomQuestionId(excludeQuestionId)
+  const nextQuestionId = await wrap(fetchRandomQuestionId(excludeQuestionId))
 
   if (!nextQuestionId) {
     return
@@ -66,7 +43,7 @@ export const goToNextQuestion = action(async () => {
   }
 
   pendingNextQuestionId.set(nextQuestionId)
-  shownQuestionIdWhenNextRequested.set(excludeQuestionId ?? null)
+  shownQuestionIdWhenNextRequested.set(excludeQuestionId)
 
   requestQuestionPath(nextQuestionId)
 }, 'goToNextQuestion').extend(withAsync())

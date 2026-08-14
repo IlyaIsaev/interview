@@ -1,16 +1,22 @@
-import { action, reatomForm } from '@reatom/core'
+import { action, computed, reatomForm, wrap } from '@reatom/core'
 import { toast } from 'sonner'
+import * as v from 'valibot'
 
-import { api } from '@/common/api'
-import {
-  readApiErrorMessage,
-  readUnknownErrorMessage,
-} from '@/common/lib/error-message'
+import { readUnknownErrorMessage } from '@/common/lib/error-message'
 
-import type { Question } from '../../../model/questions'
+import { createQuestion } from '../../../api/questions-api'
 import { loadQuestionBank, prependQuestion } from '../../../model/questions'
-import { showCreatedReadQuestion } from '../../read'
+import { showCreatedQuestion } from '../../../model/show-created-question'
 import { createQuestionDialogOpen } from './dialog-open'
+
+const CreateQuestionSchema = v.object({
+  question: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(1, 'Question is required'),
+  ),
+  answer: v.pipe(v.string(), v.trim(), v.minLength(1, 'Answer is required')),
+})
 
 export const createQuestionForm = reatomForm(
   {
@@ -19,38 +25,17 @@ export const createQuestionForm = reatomForm(
   },
   {
     name: 'createQuestionForm',
-    validateOnBlur: true,
+    schema: CreateQuestionSchema,
+    validateOnChange: true,
     resetOnSubmit: true,
-    validateBeforeSubmit: ({ question, answer }) => {
-      if (!question.trim()) {
-        throw new Error('Question is required')
-      }
-
-      if (!answer.trim()) {
-        throw new Error('Answer is required')
-      }
-    },
     onSubmit: async ({ question, answer }) => {
+      const trimmedQuestion = question.trim()
+      const trimmedAnswer = answer.trim()
+
       try {
-        const response = await api.questions.$post({
-          json: {
-            question: question.trim(),
-            answer: answer.trim(),
-          },
-        })
-
-        if (!response.ok) {
-          const errorPayload = await response.json().catch(() => null)
-          const errorMessage = readApiErrorMessage(
-            errorPayload,
-            'Failed to save question',
-          )
-
-          throw new Error(errorMessage)
-        }
-
-        const responsePayload = await response.json()
-        const createdQuestion = responsePayload.question as Question
+        const createdQuestion = await wrap(
+          createQuestion(trimmedQuestion, trimmedAnswer),
+        )
         const createdQuestionTitle = createdQuestion.question
 
         prependQuestion(createdQuestion)
@@ -63,7 +48,7 @@ export const createQuestionForm = reatomForm(
 
         createQuestionDialogOpen.setFalse()
 
-        showCreatedReadQuestion(createdQuestion)
+        showCreatedQuestion(createdQuestion)
 
         toast.success(`“${createdQuestionTitle}” created`, {
           classNames: {
@@ -98,7 +83,15 @@ export const setCreateQuestionDialogOpen = action((isOpen: boolean) => {
   }
 }, 'setCreateQuestionDialogOpen')
 
+export const isCreateQuestionFormValid = computed(() => {
+  return v.safeParse(CreateQuestionSchema, createQuestionForm()).success
+}, 'isCreateQuestionFormValid')
+
 export const submitCreateQuestionForm = action(async () => {
+  if (!isCreateQuestionFormValid()) {
+    return
+  }
+
   try {
     await createQuestionForm.submit()
   } catch {

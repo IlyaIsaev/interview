@@ -1,15 +1,29 @@
-import { action, atom, effect, reatomForm, withAsync, wrap } from '@reatom/core'
-import { toast } from 'sonner'
-
-import { api } from '@/common/api'
 import {
-  readApiErrorMessage,
-  readUnknownErrorMessage,
-} from '@/common/lib/error-message'
+  action,
+  atom,
+  computed,
+  effect,
+  reatomForm,
+  withAsync,
+  wrap,
+} from '@reatom/core'
+import { toast } from 'sonner'
+import * as v from 'valibot'
 
-import type { Question } from '../../../model/questions'
+import { readUnknownErrorMessage } from '@/common/lib/error-message'
+
+import { fetchQuestion, updateQuestion } from '../../../api/questions-api'
 import { loadQuestionBank, replaceQuestion } from '../../../model/questions'
 import { setShownQuestion, shownQuestion } from '../../../model/shown-question'
+
+const UpdateQuestionSchema = v.object({
+  question: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(1, 'Question is required'),
+  ),
+  answer: v.pipe(v.string(), v.trim(), v.minLength(1, 'Answer is required')),
+})
 
 export const updateQuestionId = atom<string | null>(null, 'updateQuestionId')
 
@@ -20,19 +34,13 @@ export const updateQuestionForm = reatomForm(
   },
   {
     name: 'updateQuestionForm',
-    validateOnBlur: true,
+    schema: UpdateQuestionSchema,
+    validateOnChange: true,
     resetOnSubmit: false,
-    validateBeforeSubmit: ({ question, answer }) => {
-      if (!question.trim()) {
-        throw new Error('Question is required')
-      }
-
-      if (!answer.trim()) {
-        throw new Error('Answer is required')
-      }
-    },
     onSubmit: async ({ question, answer }) => {
       const questionId = updateQuestionId()
+      const trimmedQuestion = question.trim()
+      const trimmedAnswer = answer.trim()
 
       if (!questionId) {
         const errorMessage = 'No question selected for update'
@@ -43,29 +51,10 @@ export const updateQuestionForm = reatomForm(
       }
 
       try {
-        const response = await api.questions[':id'].$put({
-          param: {
-            id: questionId,
-          },
-          json: {
-            question: question.trim(),
-            answer: answer.trim(),
-          },
-        })
-
-        if (!response.ok) {
-          const errorPayload = await response.json().catch(() => null)
-          const errorMessage = readApiErrorMessage(
-            errorPayload,
-            'Failed to update question',
-          )
-
-          throw new Error(errorMessage)
-        }
-
-        const responsePayload = await response.json()
-        const updatedQuestion = responsePayload.question as Question
-        const updatedQuestionTitle = question.trim()
+        const updatedQuestion = await wrap(
+          updateQuestion(questionId, trimmedQuestion, trimmedAnswer),
+        )
+        const updatedQuestionTitle = trimmedQuestion
 
         replaceQuestion(updatedQuestion)
 
@@ -109,24 +98,11 @@ export const loadUpdateQuestion = action(async () => {
     throw new Error('No question selected for update')
   }
 
-  const response = await api.questions[':id'].$get({
-    param: {
-      id: questionId,
-    },
-  })
+  const question = await wrap(fetchQuestion(questionId))
 
-  if (!response.ok) {
-    const errorPayload = await response.json().catch(() => null)
-    const errorMessage = readApiErrorMessage(
-      errorPayload,
-      'Failed to load question',
-    )
-
-    throw new Error(errorMessage)
+  if (!question) {
+    throw new Error('Failed to load question')
   }
-
-  const responsePayload = await response.json()
-  const question = responsePayload.question as Question
 
   updateQuestionForm.reset({
     question: question.question,
@@ -161,8 +137,12 @@ export const setUpdateQuestionDialogOpen = action(
   'setUpdateQuestionDialogOpen',
 )
 
+export const isUpdateQuestionFormValid = computed(() => {
+  return v.safeParse(UpdateQuestionSchema, updateQuestionForm()).success
+}, 'isUpdateQuestionFormValid')
+
 export const submitUpdateQuestionForm = action(async () => {
-  if (!updateQuestionForm.focus().dirty) {
+  if (!updateQuestionForm.focus().dirty || !isUpdateQuestionFormValid()) {
     return
   }
 

@@ -8,10 +8,14 @@ export {
   signUp,
   useSession,
   user,
-} from '@/common/auth'
+} from './model/session'
 
-export type { Session, User } from '@/common/auth'
+export type { Session, User } from './model/session'
 
-export { SignInForm, signInForm } from './sign-in-form'
+export { signInForm, submitSignInForm } from './model/sign-in-form'
 
-export { SignUpForm, signUpForm } from './sign-up-form'
+export { signUpForm, submitSignUpForm } from './model/sign-up-form'
+
+export { SignInForm } from './ui/sign-in-form'
+
+export { SignUpForm } from './ui/sign-up-form'

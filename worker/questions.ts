@@ -2,7 +2,7 @@ import { and, count, desc, eq, like, ne, or, sql } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { validator } from 'hono/validator'
 
-import { createDb, demoQuestions, questions } from '@/db'
+import { createDb, demoQuestions, questions } from './db'
 
 import type { AuthEnv, AuthVariables } from './auth'
 import { resolveDemoProfile, type DemoProfile } from './demo-profile'

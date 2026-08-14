@@ -1,8 +1,8 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
-import { Button } from '@/common/components/ui/button'
-import { FieldError, FieldGroup, FieldSet } from '@/common/components/ui/field'
+import { Button } from '@/common/ui/button'
+import { FieldGroup, FieldSet } from '@/common/ui/field'
 
 import {
   MarkdownAnswerField,
@@ -11,23 +11,28 @@ import {
 import {
   closeCreateQuestionDialog,
   createQuestionForm,
+  isCreateQuestionFormValid,
   submitCreateQuestionForm,
 } from '../model/create-question-form'
 
 export const CreateQuestionForm = reatomComponent(() => {
-  const submitError = createQuestionForm.submit.error()
-  const isPending = createQuestionForm.submit.pending() > 0
+  const isCreateQuestionPending = !createQuestionForm.submit.ready()
 
-  const handleSubmit = wrap((event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    void submitCreateQuestionForm()
-  })
+  const handleCreateQuestionSubmit = wrap(
+    (formEvent: React.FormEvent<HTMLFormElement>) => {
+      formEvent.preventDefault()
+      void submitCreateQuestionForm()
+    },
+  )
 
   return (
-    <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+    <form
+      className="flex min-h-0 flex-1 flex-col"
+      onSubmit={handleCreateQuestionSubmit}
+    >
       <FieldSet
         className="flex min-h-0 flex-1 flex-col gap-4"
-        disabled={isPending}
+        disabled={isCreateQuestionPending}
       >
         <FieldGroup className="flex min-h-0 flex-1 flex-col gap-4">
           <MarkdownField
@@ -44,21 +49,21 @@ export const CreateQuestionForm = reatomComponent(() => {
             name="answer"
             className="min-h-0 flex-1"
           />
-          <div className="mt-auto flex shrink-0 flex-col gap-2">
-            <FieldError>{submitError?.message}</FieldError>
-            <div className="flex items-center justify-between gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPending}
-                onClick={wrap(closeCreateQuestionDialog)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving…' : 'Save question'}
-              </Button>
-            </div>
+          <div className="mt-auto flex shrink-0 items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isCreateQuestionPending}
+              onClick={wrap(closeCreateQuestionDialog)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isCreateQuestionPending || !isCreateQuestionFormValid()}
+            >
+              {isCreateQuestionPending ? 'Saving…' : 'Save question'}
+            </Button>
           </div>
         </FieldGroup>
       </FieldSet>

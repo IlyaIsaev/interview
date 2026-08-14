@@ -7,8 +7,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/common/components/ui/dialog'
-import { Spinner } from '@/common/components/ui/spinner'
+} from '@/common/ui/dialog'
+import { Spinner } from '@/common/ui/spinner'
 
 import {
   loadUpdateQuestion,
@@ -19,19 +19,23 @@ import {
 import { UpdateQuestionForm } from './update-question-form'
 
 export const UpdateQuestionDialog = reatomComponent(() => {
-  const id = updateQuestionId()
-  const isLoading = loadUpdateQuestion.pending() > 0
-  const isSubmitting = updateQuestionForm.submit.pending() > 0
-  const isBusy = isLoading || isSubmitting
+  const questionId = updateQuestionId()
+  const isUpdateQuestionLoading = loadUpdateQuestion.pending() > 0
+  const isUpdateQuestionSubmitting = updateQuestionForm.submit.pending() > 0
+  const isUpdateDialogBusy =
+    isUpdateQuestionLoading || isUpdateQuestionSubmitting
 
-  const handleOpenChange = wrap((open: boolean) => {
-    setUpdateQuestionDialogOpen(open, isBusy)
+  const handleUpdateDialogOpenChange = wrap((isOpen: boolean) => {
+    setUpdateQuestionDialogOpen(isOpen, isUpdateDialogBusy)
   })
 
   return (
-    <Dialog open={id !== null} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={questionId !== null}
+      onOpenChange={handleUpdateDialogOpenChange}
+    >
       <DialogContent
-        showCloseButton={!isBusy}
+        showCloseButton={!isUpdateDialogBusy}
         className="flex h-[66.666dvh] w-[min(calc(100%-2rem),66.666vw)] max-w-none flex-col gap-4 overflow-hidden sm:max-w-none"
       >
         <DialogHeader className="shrink-0">
@@ -41,7 +45,7 @@ export const UpdateQuestionDialog = reatomComponent(() => {
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
+        {isUpdateQuestionLoading ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
             <Spinner className="size-5" />
           </div>

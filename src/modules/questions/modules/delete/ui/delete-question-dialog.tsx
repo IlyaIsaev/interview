@@ -1,7 +1,7 @@
 import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 
-import { Button } from '@/common/components/ui/button'
+import { Button } from '@/common/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/common/components/ui/dialog'
-import { Spinner } from '@/common/components/ui/spinner'
+} from '@/common/ui/dialog'
+import { Spinner } from '@/common/ui/spinner'
 
 import {
   closeDeleteQuestionDialog,

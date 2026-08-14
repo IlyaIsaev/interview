@@ -4,7 +4,7 @@ import type {
 } from '@cloudflare/workers-types'
 import { Hono } from 'hono'
 
-import { createDb } from '@/db'
+import { createDb } from './db'
 
 import {
   app as authApp,

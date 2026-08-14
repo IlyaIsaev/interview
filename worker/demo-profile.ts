@@ -2,7 +2,7 @@ import { eq, lte } from 'drizzle-orm'
 import type { Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 
-import { createDb, demoProfiles, type Database } from '@/db'
+import { createDb, demoProfiles, type Database } from './db'
 
 import type { AuthEnv } from './auth'
 

@@ -1,15 +1,12 @@
 import { action, atom, effect, withAsync, wrap } from '@reatom/core'
 import { toast } from 'sonner'
 
-import { api } from '@/common/api'
-import {
-  readApiErrorMessage,
-  readUnknownErrorMessage,
-} from '@/common/lib/error-message'
+import { readUnknownErrorMessage } from '@/common/lib/error-message'
 
-import type { Question } from '../../../model/questions'
+import { deleteQuestionById, fetchQuestion } from '../../../api/questions-api'
+import type { Question } from '../../../model/question'
+import { afterQuestionRemoved } from '../../../model/after-question-removed'
 import { loadQuestionBank, removeQuestion } from '../../../model/questions'
-import { clearReadQuestionIfId } from '../../read'
 
 export const deleteQuestionId = atom<string | null>(null, 'deleteQuestionId')
 
@@ -25,24 +22,11 @@ export const loadDeleteQuestion = action(async () => {
     throw new Error('No question selected for deletion')
   }
 
-  const response = await api.questions[':id'].$get({
-    param: {
-      id: questionId,
-    },
-  })
+  const question = await wrap(fetchQuestion(questionId))
 
-  if (!response.ok) {
-    const errorPayload = await response.json().catch(() => null)
-    const errorMessage = readApiErrorMessage(
-      errorPayload,
-      'Failed to load question',
-    )
-
-    throw new Error(errorMessage)
+  if (!question) {
+    throw new Error('Failed to load question')
   }
-
-  const responsePayload = await response.json()
-  const question = responsePayload.question as Question
 
   questionPendingDeletion.set(question)
 
@@ -91,21 +75,7 @@ export const deleteQuestion = action(async () => {
   }
 
   try {
-    const response = await api.questions[':id'].$delete({
-      param: {
-        id: questionId,
-      },
-    })
-
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => null)
-      const errorMessage = readApiErrorMessage(
-        errorPayload,
-        'Failed to delete question',
-      )
-
-      throw new Error(errorMessage)
-    }
+    await wrap(deleteQuestionById(questionId))
 
     const deletedQuestionTitle = questionToDelete?.question ?? 'Question'
 
@@ -117,7 +87,7 @@ export const deleteQuestion = action(async () => {
       // Delete succeeded; the sidebar will retry on the next open.
     }
 
-    await clearReadQuestionIfId(questionId)
+    await afterQuestionRemoved(questionId)
 
     deleteQuestionId.set(null)
 

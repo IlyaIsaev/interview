@@ -3,8 +3,8 @@ import { betterAuth } from 'better-auth/minimal'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { Hono } from 'hono'
 
-import { createDb } from '@/db'
-import * as schema from '@/db/schema'
+import { createDb } from './db'
+import * as schema from './db/schema'
 
 export type AuthEnv = {
   interview: D1Database

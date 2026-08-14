@@ -72,26 +72,26 @@ export {
 } from './model/shown-question'
 
 export {
+  QuestionsDrawer,
   QuestionsSearchField,
+  QuestionsSidebar,
+  isQuestionsSidebarOpen,
   questionsSearchError,
   questionsSearchInput,
   questionsSearchResults,
   resetQuestionsSearch,
   searchQuestions,
   setQuestionsSearchInput,
-} from './modules/search'
-
-export { hydrateQuestionsSession } from './model/hydrate-questions'
-
-export { isQuestionsSidebarOpen } from './model/sidebar-open'
+} from './modules/list'
 
 export {
   canCreateQuestion,
   DEMO_QUESTIONS_LIMIT,
   demoQuestionsLimitMessage,
+  isQuestionsHydrationPayloadAlreadyApplied,
   isQuestionsLoaded,
   loadQuestionBank,
-  pickRandomQuestionId,
+  markQuestionsHydrationPayloadApplied,
   prependQuestion,
   questions,
   questionsError,
@@ -101,7 +101,21 @@ export {
   resetQuestionsHydration,
 } from './model/questions'
 
-export type { Question, QuestionsHydrationPayload } from './model/questions'
+export { showCreatedQuestion } from './model/show-created-question'
 
-export { QuestionsDrawer } from './ui/questions-drawer'
-export { QuestionsSidebar } from './ui/questions-sidebar'
+export { afterQuestionRemoved } from './model/after-question-removed'
+
+export { hydrateQuestionsSession } from './model/hydrate-questions'
+
+export { pickRandomQuestionId } from './model/question'
+
+export type { Question, QuestionsHydrationPayload } from './model/question'
+
+export {
+  createQuestion,
+  deleteQuestionById,
+  fetchQuestion,
+  fetchQuestions,
+  fetchRandomQuestionId,
+  updateQuestion,
+} from './api/questions-api'

@@ -2,12 +2,8 @@ import { wrap } from '@reatom/core'
 import { reatomComponent } from '@reatom/react'
 import { PlusIcon } from 'lucide-react'
 
-import { Button } from '@/common/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/common/components/ui/tooltip'
+import { Button } from '@/common/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/common/ui/tooltip'
 
 import {
   canCreateQuestion,

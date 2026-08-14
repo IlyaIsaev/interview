@@ -1,17 +1,18 @@
-import { action, atom, reatomBoolean, withAsync } from '@reatom/core'
+import { action, atom, reatomBoolean, withAsyncData, wrap } from '@reatom/core'
 
-import { api } from '@/common/api'
-
+import { fetchQuestion } from '../../../api/questions-api'
 import {
   requestQuestionPath,
   requestQuestionsListPath,
 } from '../../../model/question-path'
 import {
-  isQuestionsHydrationPayloadAlreadyApplied,
   pickRandomQuestionId,
-  questions,
   type Question,
   type QuestionsHydrationPayload,
+} from '../../../model/question'
+import {
+  isQuestionsHydrationPayloadAlreadyApplied,
+  questions,
 } from '../../../model/questions'
 import {
   clearShownQuestion,
@@ -92,31 +93,24 @@ export const hydrateReadQuestionFromPayload = action(
 )
 
 export const fetchQuestionById = action(async (questionId: string) => {
-  const response = await api.questions[':id'].$get({
-    param: {
-      id: questionId,
-    },
-  })
+  const question = await wrap(fetchQuestion(questionId))
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      clearReadQuestion()
+  if (!question) {
+    clearReadQuestion()
 
-      return null
-    }
-
-    throw new Error('Failed to load question')
+    return null
   }
-
-  const responsePayload = await response.json()
-  const question = responsePayload.question as Question
 
   setShownQuestion(question)
 
   readAnswerVisible.setFalse()
 
   return question
-}, 'fetchQuestionById').extend(withAsync())
+}, 'fetchQuestionById').extend(
+  withAsyncData({
+    initState: null as Question | null,
+  }),
+)
 
 export const selectReadQuestion = action(async (questionId: string) => {
   await fetchQuestionById(questionId)
