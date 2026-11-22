@@ -1,0 +1,52 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+.output
+.wrangler
+.dev.vars
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+!.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Local tool caches
+.lighthouse/
+.playwright-cli/
+.playwright-mcp/
+.tanstack/
+.vite-hooks/
+
+# Machine-local graft Cursor hooks (absolute paths)
+.cursor/hooks.json
+.cursor/hooks/
+.dmux/
+.dmux-hooks/
+.vitest/

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "react-performance-skill": {
+      "source": "kkn1125/devkimson-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-performance-skill/SKILL.md",
+      "computedHash": "97053e2af534f6706442860c071c7faf37d34d9f755de26a8cc8384589086549"
+    }
+  }
+}

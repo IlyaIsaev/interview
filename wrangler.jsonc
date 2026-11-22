@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "interview",
+  "account_id": "9ac2b6c2a981784c8bb50d04c7f07b8f",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-09-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+  "vars": {
+    "BETTER_AUTH_URL": "https://interview.ilya-isaev-dev.workers.dev",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "interview-quiz",
+      "database_id": "4442de25-9bf1-416e-8f35-9bfe1eb4e30d",
+      "migrations_dir": "migrations",
+    },
+  ],
+}
